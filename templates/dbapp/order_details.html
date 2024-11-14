@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Details</title>
+</head>
+<body>
+    <h1>Order Details</h1>
+    <h2>Customer Information</h2>
+    <p><strong>Customer Name:</strong> {{ customer.cname }}</p>
+    <p><strong>Customer No:</strong> {{ customer_no }}</p>
+    <p><strong>ZIP Code:</strong> {{ zip_code }}</p>
+    <p><strong>City:</strong> {{ city }}</p>
+
+    <h2>Order Information</h2>
+    <p><strong>Taken By:</strong> {{ taken_by }}</p>
+    <p><strong>Received On:</strong> {{ received_on }}</p>
+    <p><strong>Shipped On:</strong> {{ shipped_on }}</p>
+
+    <h2>Order Parts</h2>
+    <table border="1">
+        <tr>
+            <th>Part No</th>
+            <th>Part Name</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Sum</th>
+        </tr>
+        {% for part in parts %}
+        <tr>
+            <td>{{ part.part_no }}</td>
+            <td>{{ part.part_name }}</td>
+            <td>{{ part.quantity }}</td>
+            <td>{{ part.price }}</td>
+            <td>{{ part.sum }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Total</h2>
+    <p><strong>Total Order Sum:</strong> {{ total }}</p>
+</body>
+</html>

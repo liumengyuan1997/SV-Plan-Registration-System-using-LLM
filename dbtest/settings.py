@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "dbapp",
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +50,13 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "dbapp.base64_middleware.Base64Middleware"
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+}
+
 
 ROOT_URLCONF = "dbtest.urls"
 
@@ -80,27 +87,39 @@ pymysql.version_info = (1, 4, 6, 'final', 0) # change mysqlclient version
 pymysql.install_as_MySQLdb()
 
 # [START db_setup]
-if os.getenv('GAE_APPLICATION', None):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
-            'USER': 'root',
-            'PASSWORD': ' ',
-            'NAME': 'company',
-        }
+# if os.getenv('GAE_APPLICATION', None):
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.mysql',
+#             'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
+#             'USER': 'root',
+#             'PASSWORD': ' ',
+#             'NAME': 'company',
+#         }
+#     }
+# else:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.mysql',
+#             'NAME': 'company',
+#             'USER': 'root',
+#             'PASSWORD': ' ',
+#             'HOST': '35.199.166.101',
+#             'PORT': '3306'
+#         }
+#     }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '127.0.0.1',
+        'PORT': '3306'
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'company',
-            'USER': 'root',
-            'PASSWORD': ' ',
-            'HOST': '35.199.166.101',
-            'PORT': '3306'
-        }
-    }
+}
+
 
 
 # Password validation

@@ -18,15 +18,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from dbapp import views
+from django.urls import include, path
 
 urlpatterns = [
-    # path("admin/", admin.site.urls),
-    path('', views.testmysql),
-    path('list/', views.EmployeeList.as_view(), name='employee_list'),
-    path('list/<int:pk>', views.EmployeeDetail.as_view(), name='employee_detail'),
-    path('create', views.EmployeeCreate.as_view() ),
-    path('update/<int:pk>', views.EmployeeUpdate.as_view(), name='employee_update'),
-    path('delete/<int:pk>', views.EmployeeDelete.as_view(), name='employee_delete'),
-    path('order/', views.OrderList.as_view(), name='order_list'),
-    path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+    path("admin/", admin.site.urls),
+    path('api/', include('dbapp.urls')),
 ]

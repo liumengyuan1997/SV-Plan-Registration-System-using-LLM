@@ -1,115 +1,68 @@
-from django.shortcuts import render, get_object_or_404
-
-# Create your views here.
-
-from .models import Employee, Order, Customer, Employees, Odetail, Part, Zipcode
-
-from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.db import connection
-
-def testmysql(request):
-    employee = Employee.objects.all()
-    context = {
-    'user_ssn': employee[0].ssn,
-    'user_name': employee[0].lname,
-    }
-    return render(request, 'home.html', context)
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import SignupSerializer, EventSerializer
+from .models import User
+from .permission import IsAdminRole
+from rest_framework.permissions import AllowAny
+import base64
 
 
-class EmployeeList(ListView):
-    template_name='dbapp/employee_list.html' 
-    model = Employee
-
-class EmployeeDetail(DetailView):
-    model = Employee
-
-class EmployeeCreate(CreateView):
-    model = Employee
-    fields = [
-        'fname',
-        'minit',
-        'lname',
-        'ssn',
-        'bdate',
-        'address',
-        'sex',
-        'salary',
-        'super_ssn',
-        'dno',
-    ]
-    #template_name_suffix = '_update_form' 
-    success_url = "/list"
-
-class EmployeeUpdate(UpdateView):
-    model = Employee
-    fields = [
-        'fname',
-        'minit',
-        'lname',
-        'ssn',
-        'bdate',
-        'address',
-        'sex',
-        'salary',
-        'super_ssn',
-        'dno',
-    ]
-    #template_name_suffix = '_update_form'
-    success_url = "/list"
-
-class EmployeeDelete(DeleteView):
-    model = Employee
-    success_url = "/list"
+class SignUpView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OrderList(ListView):
-    template_name='dbapp/order_list.html' 
-    model = Order
+class SignInView(APIView):
+    permission_classes = [AllowAny]
 
-class OrderDetailView(DetailView):
-    model = Order
-    template_name = 'dbapp/order_details.html'  # Specify your template
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        order = self.get_object()
+        if not email or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Retrieve related customer and employee info
-        customer = order.cno
-        employee = order.eno
-        zip_info = Zipcode.objects.filter(zip=customer.zip).first()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Get order details and parts information
-        order_details = Odetail.objects.filter(ono=order)
-        parts = []
-        total_order_sum = 0
+        if password != user.password:
+            return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        for detail in order_details:
-            part = detail.pno
-            quantity = detail.qty
-            price = part.prices
-            part_sum = quantity * price
-            total_order_sum += part_sum
-            parts.append({
-                'part_no': part.pno,
-                'part_name': part.pname,
-                'quantity': quantity,
-                'price': price,
-                'sum': part_sum,
-            })
+        return Response({
+            "message": "Successful login",
+        }, status=status.HTTP_200_OK)
 
-        # Add custom data to the context
-        context.update({
-            'customer': customer,
-            'customer_no': customer.cno,
-            'zip_code': customer.zip,
-            'city': zip_info.city if zip_info else None,
-            'taken_by': employee.ename,
-            'received_on': order.received,
-            'shipped_on': order.shipped,
-            'parts': parts,
-            'total': total_order_sum,
-        })
-        return context
 
+class PublishEventView(APIView):
+
+    permission_classes = [IsAdminRole]
+
+    def post(self, request):
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                event = serializer.save(event_published_by=request.user)
+                return Response({
+                    "success": True,
+                    "message": "Event published successfully!",
+                    "data": EventSerializer(event).data
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({
+                    "success": False,
+                    "message": "An unexpected error occurred.",
+                    "error": str(e)
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({
+            "success": False,
+            "message": "Validation failed.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)

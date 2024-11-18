@@ -7,6 +7,30 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
+class Task(models.Model):
+    studentId = models.IntegerField(blank=True, null=True, primary_key=True)
+    taskId = models.IntegerField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    entryDate = models.DateField(blank=True, null=True)
+    dueDate = models.DateField(blank=True, null=True)
+    class Meta:
+        # managed = False
+        db_table = 'tasks'
+
+class UploadedFile(models.Model):
+    filekId = models.IntegerField(blank=True, null=True, primary_key=True)
+    file = models.FileField(upload_to='uploads/')
+    # foreign key
+    taskId = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        db_column='taskId',
+        blank=True,
+        null=True 
+    )
+    class Meta:
+        # managed = False
+        db_table = 'files'
 
 class Department(models.Model):
     dnumber = models.IntegerField(blank=True, null=True)
@@ -89,3 +113,4 @@ class Zipcode(models.Model):
     class Meta:
         # managed = False
         db_table = 'zipcodes'
+

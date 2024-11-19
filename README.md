@@ -2,11 +2,6 @@
 The SV Plan Registration System, managed by Khoury College, streamlines task management and event updates for the SV campus. Accessible via web and mobile, it allows users to track tasks with photos, file attachments, or voice memos. The system also informs users about essential campus events, keeping them engaged and up-to-date.
 
 # API Documentation
-
-## General Information
-- **Base URL**: `/api/`
-- **Content-Type**: `application/json`
-
 ---
 
 ### 1. Upload File - `UploadFileView`
@@ -26,16 +21,16 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
   ```json
   {
     "message": "Task and file created successfully.",
-    "task": "{
-        'taskId': task.taskId,
-        'description': task.description,
-        'entryDate': task.entryDate,
-        'dueDate': task.dueDate
-    }",
-    "file": "{
-        'fileId': uploaded_file.fileId,
-        'filePath': uploaded_file.file.url
-    }"
+    "task": {
+        "taskId": task.taskId,
+        "description": task.description,
+        "entryDate": task.entryDate,
+        "dueDate": task.dueDate
+    },
+    "file": {
+        "fileId": uploaded_file.fileId,
+        "filePath": uploaded_file.file.url
+    }
   }
   ```
 

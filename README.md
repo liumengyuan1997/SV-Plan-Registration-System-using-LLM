@@ -100,17 +100,17 @@
 
 ### 3. Publish Event - `PublishEventView`
 
-**Endpoint**: `/publish-event/`  
+**Endpoint**: `/publishevent/`  
 **Method**: `POST`  
 **Permissions**: Admin only (requires `IsAdminRole` permission)  
 
 #### Request Example:
 ```json
 {
-    "title": "Hackathon 2024",
-    "description": "A global hackathon event for developers.",
-    "date": "2024-12-01T10:00:00Z",
-    "location": "San Francisco, CA"
+    "event_name": "Tech Conference 2024",
+    "event_description": "A conference for tech enthusiasts to network and share knowledge.",
+    "event_location": "San Francisco, CA",
+    "event_time": "2024-12-15T10:00:00Z"
 }
 ```
 

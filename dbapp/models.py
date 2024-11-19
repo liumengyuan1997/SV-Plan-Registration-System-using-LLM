@@ -8,8 +8,8 @@
 from django.db import models
 
 class Task(models.Model):
-    studentId = models.IntegerField(blank=True, null=True, primary_key=True)
-    taskId = models.IntegerField(blank=True, null=True)
+    taskId = models.AutoField(blank=True, primary_key=True)
+    studentId = models.IntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     entryDate = models.DateField(blank=True, null=True)
     dueDate = models.DateField(blank=True, null=True)
@@ -18,13 +18,14 @@ class Task(models.Model):
         db_table = 'tasks'
 
 class UploadedFile(models.Model):
-    filekId = models.IntegerField(blank=True, null=True, primary_key=True)
+    fileId = models.AutoField(blank=True, primary_key=True)
     file = models.FileField(upload_to='uploads/')
     # foreign key
     taskId = models.ForeignKey(
         Task,
         on_delete=models.CASCADE,
         db_column='taskId',
+        to_field='taskId',
         blank=True,
         null=True 
     )

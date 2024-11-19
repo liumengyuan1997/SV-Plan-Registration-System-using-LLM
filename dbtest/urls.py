@@ -29,4 +29,6 @@ urlpatterns = [
     path('delete/<int:pk>', views.EmployeeDelete.as_view(), name='employee_delete'),
     path('order/', views.OrderList.as_view(), name='order_list'),
     path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+    path('upload/', views.upload_file, name='upload_file'),
+    path('task/<int:task_id>/', views.task_detail, name='task_detail'),
 ]

@@ -1,12 +1,91 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 
 # Create your views here.
 
-from .models import Employee, Order, Customer, Employees, Odetail, Part, Zipcode
+from .models import Employee, Order, Customer, Employees, Odetail, Part, Zipcode, UploadedFile, Task
 
+from django import forms
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.http import JsonResponse, HttpResponseRedirect
 from django.db import connection
+from django.utils.timezone import now
+
+from .utils import process_file_content, generate_task_description_and_due_date
+class FileUploadForm(forms.ModelForm):
+    class Meta:
+        model = UploadedFile
+        fields = ('file',)
+
+def upload_file(request):
+    if request.method == 'POST':
+        form = FileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = form.save()
+            file = uploaded_file.file
+
+            content = process_file_content(file)
+            if content:
+                task_description, due_date = generate_task_description_and_due_date(content)
+
+                task = Task.objects.create(
+                    studentId=None,  # todo: after add student table
+                    description=task_description,
+                    entryDate=now().date(),
+                    dueDate=due_date
+                )
+
+                uploaded_file.taskId = task
+                uploaded_file.save()
+
+                return redirect('task_detail', task_id=task.taskId)
+
+                # return JsonResponse({
+                #     'message': 'Task and file created successfully.',
+                #     'task': {
+                #         'taskId': task.taskId,
+                #         'description': task.description,
+                #         'entryDate': task.entryDate,
+                #         'dueDate': task.dueDate
+                #     },
+                #     'file': {
+                #         'fileId': uploaded_file.fileId,
+                #         'filePath': uploaded_file.file.url
+                #     }
+                # })
+            else:
+                return JsonResponse({'error': 'Unsupported file type'}, status=400)
+    else:
+        form = FileUploadForm()
+    return render(request, 'dbapp/upload.html', {'form': form})
+
+def task_detail(request, task_id):
+    # 获取任务对象，如果不存在则返回 404 页面
+    task = get_object_or_404(Task, pk=task_id)
+
+    if request.method == 'POST':
+        # 提交表单以修改任务
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()  # 保存修改后的任务
+            return HttpResponseRedirect(f'/task/{task.taskId}/')  # 刷新页面或重定向到任务详情
+    else:
+        # 初始化表单显示当前任务数据
+        form = TaskForm(instance=task)
+        file = UploadedFile.objects.filter(taskId = task.taskId)
+
+    # 渲染任务详情页面
+    return render(request, 'dbapp/task_detail.html', {'form': form, 'task': task, 'file': file})
+
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ['description', 'dueDate']
+        widgets = {
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'dueDate': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
 
 def testmysql(request):
     employee = Employee.objects.all()

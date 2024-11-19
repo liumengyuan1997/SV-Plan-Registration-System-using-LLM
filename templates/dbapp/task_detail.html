@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Detail</title>
+</head>
+<body>
+    <!-- <h1>Task Detail</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save Changes</button>
+    </form> -->
+
+    <h3>Task Information</h3>
+    <p><strong>Task ID:</strong> {{ task.taskId }}</p>
+    <p><strong>Task Description:</strong> {{ task.description }}</p>
+    <p><strong>Due Date:</strong> {{ task.dueDate }}</p>
+    <p><strong>Entry Date:</strong> {{ task.entryDate }}</p>
+
+    <h3>Associated Files</h3>
+    {% if file %} 
+        <a href="{{ file.file.url }}" target="_blank">File</a>
+    {% else %}
+        <p>No files associated with this task.</p>
+    {% endif %}
+</body>
+</html>

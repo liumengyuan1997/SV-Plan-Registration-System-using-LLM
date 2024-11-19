@@ -10,6 +10,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.http import JsonResponse, HttpResponseRedirect
 from django.db import connection
 from django.utils.timezone import now
+from datetime import datetime
 
 from .utils import process_file_content, generate_task_description_and_due_date
 class FileUploadForm(forms.ModelForm):
@@ -38,54 +39,95 @@ def upload_file(request):
                 uploaded_file.taskId = task
                 uploaded_file.save()
 
-                return redirect('task_detail', task_id=task.taskId)
-
-                # return JsonResponse({
-                #     'message': 'Task and file created successfully.',
-                #     'task': {
-                #         'taskId': task.taskId,
-                #         'description': task.description,
-                #         'entryDate': task.entryDate,
-                #         'dueDate': task.dueDate
-                #     },
-                #     'file': {
-                #         'fileId': uploaded_file.fileId,
-                #         'filePath': uploaded_file.file.url
-                #     }
-                # })
+                return JsonResponse({
+                    'message': 'Task and file created successfully.',
+                    'task': {
+                        'taskId': task.taskId,
+                        'description': task.description,
+                        'entryDate': task.entryDate,
+                        'dueDate': task.dueDate
+                    },
+                    'file': {
+                        'fileId': uploaded_file.fileId,
+                        'filePath': uploaded_file.file.url
+                    }
+                })
             else:
                 return JsonResponse({'error': 'Unsupported file type'}, status=400)
-    else:
-        form = FileUploadForm()
-    return render(request, 'dbapp/upload.html', {'form': form})
 
 def task_detail(request, task_id):
-    # 获取任务对象，如果不存在则返回 404 页面
     task = get_object_or_404(Task, pk=task_id)
 
-    if request.method == 'POST':
-        # 提交表单以修改任务
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            form.save()  # 保存修改后的任务
-            return HttpResponseRedirect(f'/task/{task.taskId}/')  # 刷新页面或重定向到任务详情
-    else:
-        # 初始化表单显示当前任务数据
-        form = TaskForm(instance=task)
-        file = UploadedFile.objects.filter(taskId = task.taskId)
+    if request.method == 'GET':
+        uploaded_file = UploadedFile.objects.filter(taskId=task).first()
 
-    # 渲染任务详情页面
-    return render(request, 'dbapp/task_detail.html', {'form': form, 'task': task, 'file': file})
+        return JsonResponse(
+            {
+                'taskId': task.taskId,
+                'description': task.description,
+                'entryDate': task.entryDate,
+                'dueDate': task.dueDate,
+                'file': None if not uploaded_file else {
+                    'fileId': uploaded_file.fileId,
+                    'filePath': uploaded_file.file.url
+                }
+            }
+        )
 
+def update_task(request, task_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
-class TaskForm(forms.ModelForm):
-    class Meta:
-        model = Task
-        fields = ['description', 'dueDate']
-        widgets = {
-            'description': forms.Textarea(attrs={'class': 'form-control'}),
-            'dueDate': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    task = get_object_or_404(Task, pk=task_id)
+
+    description = request.POST.get('description')
+    due_date = request.POST.get('dueDate')
+
+    if description:
+        task.description = description
+    if due_date:
+        try:
+            task.dueDate = datetime.strptime(due_date, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+
+    task.save()
+
+    return JsonResponse({
+        'taskId': task.taskId,
+        'description': task.description,
+        'dueDate': task.dueDate,
+        'studentId': task.studentId,
+        'entryDate': task.entryDate,
+    })
+
+def task_detail_data(task_id):
+    """Helper function to get task detail data."""
+    task = get_object_or_404(Task, pk=task_id)
+    uploaded_file = UploadedFile.objects.filter(taskId=task).first()
+
+    return {
+        'taskId': task.taskId,
+        'description': task.description,
+        'entryDate': task.entryDate.strftime('%Y-%m-%d') if task.entryDate else None,
+        'dueDate': task.dueDate.strftime('%Y-%m-%d') if task.dueDate else None,
+        'file': None if not uploaded_file else {
+            'fileId': uploaded_file.fileId,
+            'filePath': uploaded_file.file.url
         }
+    }
+
+def all_tasks(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET requests are allowed'}, status=405)
+
+    # Get all tasks
+    tasks = Task.objects.all()
+
+    # Generate detailed data for all tasks
+    tasks_data = [task_detail_data(task.taskId) for task in tasks]
+
+    return JsonResponse({'tasks': tasks_data})
 
 def testmysql(request):
     employee = Employee.objects.all()

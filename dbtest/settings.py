@@ -27,6 +27,9 @@ SECRET_KEY = "django-insecure-cwapqlkqpnhi#pn&7dyhpjc0ot^5la=2-1v%04)7^-l&^$*gy5
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+GS_BUCKET_NAME = 'db-group4-438622.appspot.com'
+GS_CREDENTIALS = None
 
 
 # Application definition
@@ -45,7 +48,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

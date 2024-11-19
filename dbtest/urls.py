@@ -25,10 +25,13 @@ urlpatterns = [
     path('list/', views.EmployeeList.as_view(), name='employee_list'),
     path('list/<int:pk>', views.EmployeeDetail.as_view(), name='employee_detail'),
     path('create', views.EmployeeCreate.as_view() ),
-    path('update/<int:pk>', views.EmployeeUpdate.as_view(), name='employee_update'),
+    # path('update/<int:pk>', views.EmployeeUpdate.as_view(), name='employee_update'),
     path('delete/<int:pk>', views.EmployeeDelete.as_view(), name='employee_delete'),
     path('order/', views.OrderList.as_view(), name='order_list'),
     path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+
     path('upload/', views.upload_file, name='upload_file'),
     path('task/<int:task_id>/', views.task_detail, name='task_detail'),
+    path('update/<int:task_id>', views.update_task, name='update_task'),
+    path('alltasks', views.all_tasks, name='all_tasks'),
 ]

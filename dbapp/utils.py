@@ -4,6 +4,9 @@ from PIL import Image
 from docx import Document
 import pytesseract
 from dateutil.parser import parse
+from .models import Task, UploadedFile
+from django.shortcuts import get_object_or_404
+
 
 openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
 def process_file_content(file):
@@ -49,3 +52,19 @@ def generate_task_description_and_due_date(content):
                 due_date = None
 
     return task_description, due_date
+
+def task_detail_data(task_id):
+    """Helper function to get task detail data."""
+    task = get_object_or_404(Task, pk=task_id)
+    uploaded_file = UploadedFile.objects.filter(taskId=task).first()
+
+    return {
+        'taskId': task.taskId,
+        'description': task.description,
+        'entryDate': task.entryDate.strftime('%Y-%m-%d') if task.entryDate else None,
+        'dueDate': task.dueDate.strftime('%Y-%m-%d') if task.dueDate else None,
+        'file': None if not uploaded_file else {
+            'fileId': uploaded_file.fileId,
+            'filePath': uploaded_file.file.url
+        }
+    }

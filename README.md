@@ -4,7 +4,7 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
 # API Documentation
 ---
 
-### 1. Upload File - `UploadFileView`
+### 1. Upload File - `FileUploadAPIView`
 
 **Endpoint**: `/upload/`  
 **Method**: `POST`
@@ -12,7 +12,7 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
 #### Request Example:
 ```json
 {
-    "file": "file",
+    "file": "<base64_encoded_file_content>",
 }
 ```
 
@@ -22,28 +22,28 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
   {
     "message": "Task and file created successfully.",
     "task": {
-        "taskId": task.taskId,
-        "description": task.description,
-        "entryDate": task.entryDate,
-        "dueDate": task.dueDate
+        "taskId": 1,
+        "description": "Generated Task Description",
+        "entryDate": "2024-11-19",
+        "dueDate": "2024-12-31"
     },
     "file": {
-        "fileId": uploaded_file.fileId,
-        "filePath": uploaded_file.file.url
+        "fileId": 1,
+        "filePath": "/media/uploads/example_file.txt"
     }
   }
   ```
 
 - **Failure (400 Bad Request)**:
   ```json
-  {
+    {
       "error": "Unsupported file type"
-  }
+    }
   ```
 
-### 2. Task Info - `TaskInfoView`
+### 2. Task Info - `TaskDetailAPIView`
 
-**Endpoint**: `/task/taskId`  
+**Endpoint**: `/task/<taskId>`  
 **Method**: `GET`  
 **Permissions**: Public (accessible to anyone)  
 
@@ -51,24 +51,29 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
 - **Success (200 OK)**:
   ```json
   {
-    "taskId": "task.taskId",
-    "description": "task.description",
-    "entryDate": "task.entryDate",
-    "dueDate": "task.dueDate",
-    "file": "None if not uploaded_file else {
-        'fileId': uploaded_file.fileId,
-        'filePath': uploaded_file.file.url
-    }"
+    "taskId": 1,
+    "description": "This is a task description",
+    "entryDate": "2024-11-19",
+    "dueDate": "2024-12-01",
+    "file": {
+        "fileId": 3,
+        "filePath": "/media/uploads/example_file.txt"
+    }
   }
   ```
 
 - **Failure (404 Not Found)**:
+  ```json
+  {
+    "detail": "Not found."
+  }
+  ```
 
 ---
 
-### 3. Update Task Descriptioin - `UpdateTaskDescriptionView`
+### 3. Update Task Descriptioin - `UpdateTaskAPIView`
 
-**Endpoint**: `/update/taskId`  
+**Endpoint**: `task/update/<taskId>`  
 **Method**: `POST`
 
 #### Request Example:
@@ -80,32 +85,36 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
 ```
 
 #### Response:
-- **Success (201 Created)**:
+- **Success (200 OK)**:
   ```json
   {
-    "taskId": "task.taskId",
-    "description": "task.description",
-    "dueDate": "task.dueDate",
-    "studentId": "task.studentId",
-    "entryDate": "task.entryDate",
+    "taskId": 1,
+    "description": "Updated task description",
+    "dueDate": "2024-12-01",
+    "studentId": null,
+    "entryDate": "2024-11-19"
   }
   ```
 
-- **Failure (404)**:
+- **Failure (400 Bad Request)**:
   ```json
-  if task not exist
+  {
+    "error": "Invalid date format. Use YYYY-MM-DD."
+  }
   ```
 
-- **Failure (405)**:
+- **Failure (404 Not Found)**:
   ```json
-  if method is get
+  {
+    "detail": "Not found."
+  }
   ```
 
 ---
 
-### 4. Get All Tasks - `AllTasksView`
+### 4. Get All Tasks - `AllTasksAPIView`
 
-**Endpoint**: `/alltasks`  
+**Endpoint**: `/tasks`  
 **Method**: `GET`
 
 #### Response:
@@ -134,23 +143,13 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
   }
   ```
 
-- **Failure (405)**:
-  ```json
-  if method is gost
-  ```
-
 ---
 
-### 5. Sort Task By Due Date in Asc or Desc - `SortTasksbyDDL`
+### 5. Sort Task By Due Date in Asc or Desc - `SortTasksByDueDateAPIView`
 
-**Endpoint**: `/task/sortbyduedate/`  
+**Endpoint**: `tasks/sort-due-date/<order=asc/desc>`  
 **Method**: `GET`
-#### Request Example:
-```json
-{
-    "order": "asc/desc",
-}
-```
+
 #### Response:
 - **Success (200 Ok)**:
   ```json
@@ -176,23 +175,13 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
     ]
   }
   ```
-
-- **Failure (405)**:
-  ```json
-  if method is gost
-  ```
 ---
 
-### 6. Sort Task By Entry Date in Asc or Desc - `SortTasksbyEntry`
+### 6. Sort Task By Entry Date in Asc or Desc - `SortTasksByEntryDateAPIView`
 
-**Endpoint**: `/task/sortbyentrydate/`  
+**Endpoint**: `tasks/sort-entry-date/<order=asc/desc>`  
 **Method**: `GET`
-#### Request Example:
-```json
-{
-    "order": "asc/desc",
-}
-```
+
 #### Response:
 - **Success (200 Ok)**:
   ```json
@@ -218,8 +207,4 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
     ]
   }
   ```
-
-- **Failure (405)**:
-  ```json
-  if method is gost
-  ```
+---

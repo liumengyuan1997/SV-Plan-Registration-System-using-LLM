@@ -20,20 +20,10 @@ from django.urls import path
 from dbapp import views
 
 urlpatterns = [
-    # path("admin/", admin.site.urls),
-    path('', views.testmysql),
-    path('list/', views.EmployeeList.as_view(), name='employee_list'),
-    path('list/<int:pk>', views.EmployeeDetail.as_view(), name='employee_detail'),
-    path('create', views.EmployeeCreate.as_view() ),
-    # path('update/<int:pk>', views.EmployeeUpdate.as_view(), name='employee_update'),
-    path('delete/<int:pk>', views.EmployeeDelete.as_view(), name='employee_delete'),
-    path('order/', views.OrderList.as_view(), name='order_list'),
-    path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
-
-    path('upload/', views.upload_file, name='upload_file'),
-    path('task/<int:task_id>/', views.task_detail, name='task_detail'),
-    path('update/<int:task_id>', views.update_task, name='update_task'),
-    path('alltasks', views.all_tasks, name='all_tasks'),
-    path('task/sortbyduedate', views.sort_due_date, name='sort_due_date'),
-    path('task/sortbyentrydate', views.sort_entry_date, name='sort_entry_date')
+    path('upload/', views.FileUploadAPIView.as_view(), name='upload_file'),
+    path('task/<int:task_id>', views.TaskDetailAPIView.as_view(), name='task_detail'),
+    path('task/update/<int:task_id>', views.UpdateTaskAPIView.as_view(), name='update_task'),
+    path('tasks', views.AllTasksAPIView.as_view(), name='all_tasks'),
+    path('tasks/sort-due-date', views.SortTasksByDueDateAPIView.as_view(), name='sort_due_date'),
+    path('tasks/sort-entry-date', views.SortTasksByEntryDateAPIView.as_view(), name='sort_entry_date')
 ]

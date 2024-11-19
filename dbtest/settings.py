@@ -31,6 +31,11 @@ DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 GS_BUCKET_NAME = 'db-group4-438622.appspot.com'
 GS_CREDENTIALS = None
 
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
 
 # Application definition
 

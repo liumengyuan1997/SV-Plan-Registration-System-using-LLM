@@ -34,4 +34,6 @@ urlpatterns = [
     path('task/<int:task_id>/', views.task_detail, name='task_detail'),
     path('update/<int:task_id>', views.update_task, name='update_task'),
     path('alltasks', views.all_tasks, name='all_tasks'),
+    path('task/sortbyduedate', views.sort_due_date, name='sort_due_date'),
+    path('task/sortbyentrydate', views.sort_entry_date, name='sort_entry_date')
 ]

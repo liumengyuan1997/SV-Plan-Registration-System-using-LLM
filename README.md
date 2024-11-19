@@ -108,7 +108,7 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
 
 ---
 
-### 3. Get All Tasks - `AllTasksView`
+### 4. Get All Tasks - `AllTasksView`
 
 **Endpoint**: `/alltasks`  
 **Method**: `GET`
@@ -145,3 +145,86 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
   ```
 
 ---
+
+### 5. Sort Task By Due Date in Asc or Desc - `SortTasksbyDDL`
+
+**Endpoint**: `/task/sortbyduedate/`  
+**Method**: `GET`
+#### Request Example:
+```json
+{
+    "order": "asc/desc",
+}
+```
+#### Response:
+- **Success (200 Ok)**:
+  ```json
+  {
+    "tasks": [
+        {
+            "taskId": 1,
+            "description": "Complete the project report",
+            "entryDate": "2024-11-01",
+            "dueDate": "2024-12-01",
+            "file": {
+                "fileId": 10,
+                "filePath": "/media/uploads/project_report.pdf"
+            }
+        },
+        {
+            "taskId": 2,
+            "description": "Review design document",
+            "entryDate": "2024-11-05",
+            "dueDate": null,
+            "file": null
+        }
+    ]
+  }
+  ```
+
+- **Failure (405)**:
+  ```json
+  if method is gost
+  ```
+---
+
+### 6. Sort Task By Entry Date in Asc or Desc - `SortTasksbyEntry`
+
+**Endpoint**: `/task/sortbyentrydate/`  
+**Method**: `GET`
+#### Request Example:
+```json
+{
+    "order": "asc/desc",
+}
+```
+#### Response:
+- **Success (200 Ok)**:
+  ```json
+  {
+    "tasks": [
+        {
+            "taskId": 1,
+            "description": "Complete the project report",
+            "entryDate": "2024-11-01",
+            "dueDate": "2024-12-01",
+            "file": {
+                "fileId": 10,
+                "filePath": "/media/uploads/project_report.pdf"
+            }
+        },
+        {
+            "taskId": 2,
+            "description": "Review design document",
+            "entryDate": "2024-11-05",
+            "dueDate": null,
+            "file": null
+        }
+    ]
+  }
+  ```
+
+- **Failure (405)**:
+  ```json
+  if method is gost
+  ```

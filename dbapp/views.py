@@ -129,6 +129,67 @@ def all_tasks(request):
 
     return JsonResponse({'tasks': tasks_data})
 
+def sort_due_date(request):
+    """Return all tasks sorted by due date, supporting both ascending and descending order."""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET requests are allowed'}, status=405)
+
+    order = request.GET.get('order', 'asc').lower()
+
+    if order == 'desc':
+        order_field = '-dueDate'
+    else:
+        order_field = 'dueDate'
+
+    tasks = Task.objects.order_by(order_field)
+
+    tasks_data = [
+        {
+            'taskId': task.taskId,
+            'description': task.description,
+            'entryDate': task.entryDate.strftime('%Y-%m-%d') if task.entryDate else None,
+            'dueDate': task.dueDate.strftime('%Y-%m-%d') if task.dueDate else None,
+            'file': None if not UploadedFile.objects.filter(taskId=task).exists() else {
+                'fileId': UploadedFile.objects.filter(taskId=task).first().fileId,
+                'filePath': UploadedFile.objects.filter(taskId=task).first().file.url
+            }
+        }
+        for task in tasks
+    ]
+
+    return JsonResponse({'tasks': tasks_data})
+
+def sort_entry_date(request):
+    """Return all tasks sorted by due date, supporting both ascending and descending order."""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET requests are allowed'}, status=405)
+
+    order = request.GET.get('order', 'asc').lower()
+
+    if order == 'desc':
+        order_field = '-entryDate'
+    else:
+        order_field = 'entryDate'
+
+    tasks = Task.objects.order_by(order_field)
+
+    tasks_data = [
+        {
+            'taskId': task.taskId,
+            'description': task.description,
+            'entryDate': task.entryDate.strftime('%Y-%m-%d') if task.entryDate else None,
+            'dueDate': task.dueDate.strftime('%Y-%m-%d') if task.dueDate else None,
+            'file': None if not UploadedFile.objects.filter(taskId=task).exists() else {
+                'fileId': UploadedFile.objects.filter(taskId=task).first().fileId,
+                'filePath': UploadedFile.objects.filter(taskId=task).first().file.url
+            }
+        }
+        for task in tasks
+    ]
+
+    return JsonResponse({'tasks': tasks_data})
+
+
 def testmysql(request):
     employee = Employee.objects.all()
     context = {

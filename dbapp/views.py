@@ -37,6 +37,7 @@ class SignInView(APIView):
             return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response({
+            "role": user.role,
             "message": "Successful login",
         }, status=status.HTTP_200_OK)
 

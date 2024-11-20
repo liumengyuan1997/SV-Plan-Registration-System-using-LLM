@@ -6,6 +6,7 @@ from .models import User, Event
 from .permission import IsAdminRole
 from rest_framework.permissions import AllowAny
 import base64
+from django.utils.timezone import now
 
 
 class SignUpView(APIView):
@@ -51,6 +52,7 @@ class PublishEventView(APIView):
         if serializer.is_valid():
             try:
                 event = serializer.save(event_published_by=request.user)
+                print(event)
                 return Response({
                     "success": True,
                     "message": "Event published successfully!",
@@ -68,10 +70,15 @@ class PublishEventView(APIView):
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ListEventView(APIView):
     def get(self, request):
         sort_param = request.query_params.get('sort', 'event_time')
-        valid_sort_fields = ['event_time', '-event_time', 'event_published_by', '-event_published_by']
+        valid_sort_fields = [
+            'event_time', '-event_time',
+            'event_published_by', '-event_published_by',
+            'event_created_at', '-event_created_at'
+        ]
 
         if sort_param not in valid_sort_fields:
             return Response({
@@ -85,4 +92,27 @@ class ListEventView(APIView):
             "success": True,
             "count": len(serialized_events),
             "events": serialized_events
+        }, status=status.HTTP_200_OK)
+
+
+class UpdateEventStatusView(APIView):
+    def get(self, request):
+        current_time = now()
+        events = Event.objects.filter(event_status__in=["In process", "Overdue"])
+        updated_events = 0
+        for event in events:
+            if current_time >= event.event_time:
+                if event.event_status != "Overdue":
+                    event.event_status = "Overdue"
+                    event.save()
+                    updated_events += 1
+            else:
+                if event.event_status != "In process":
+                    event.event_status = "In process"
+                    event.save()
+                    updated_events += 1
+
+        return Response({
+            "success": True,
+            "message": f"Event statuses updated successfully. {updated_events} events modified."
         }, status=status.HTTP_200_OK)

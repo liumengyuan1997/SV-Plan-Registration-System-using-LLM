@@ -37,6 +37,7 @@ class Event(models.Model):
         db_column='event_published_by'
     )
     event_created_at = models.DateTimeField(auto_now_add=True)
+    event_status = models.CharField(max_length=50, default='In process', null=False, blank=False)
 
     def __str__(self):
         return self.event_name

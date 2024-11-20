@@ -1,3 +1,4 @@
+﻿
 
 # API Documentation and Implementation Details
 
@@ -117,7 +118,7 @@
 #### Response:
 - **Success (201 Created)**:
   ```json
-{
+  {
     "success": true,
     "message": "Event published successfully!",
     "data": {
@@ -126,7 +127,7 @@
         "event_location": "San Francisco, CA",
         "event_time": "2024-12-15T10:00:00Z"
     }
-}
+  }
   ```
 
 - **Failure (400 Bad Request)**:
@@ -148,6 +149,38 @@
       "error": "Database error"
   }
   ```
+  
+### 4. List Events - `ListEventView`
+ 
+**Endpoint**: `/events/`  
+**Method**: `GET`  
+**Permissions**: Public (accessible to anyone)  
+
+**Example Requests**
+
+***Fetch Events Sorted by `event_time` (Ascending)***
+
+GET /events/?sort=event_time
+
+***Fetch Events Sorted by `event_time` (Descending)***
+
+GET /events/?sort=-event_time
+
+***Fetch Events Sorted by `event_published_by` (Ascending)***
+
+GET /events/?sort=event_published_by
+
+***Fetch Events Sorted by `event_published_by` (Descending)***
+
+GET /events/?sort=-event_published_by
+
+***Fetch Events Sorted by `event_created_at` (Ascending)***
+
+GET /events/?sort=event_created_at
+
+***Fetch Events Sorted by `event_created_at` (Descending)***
+
+GET /events/?sort=-event_created_at
 
 ---
 
@@ -208,23 +241,66 @@ The `IsAdminRole` class is a custom permission that ensures the user:
 
 ## File: `models.py`
 
-### **User Model**
-| Field         | Type              | Description                                         | Notes                       |
-|---------------|-------------------|-----------------------------------------------------|-----------------------------|
-| `first_name`  | `CharField`       | User's first name.                                  | Optional (nullable).        |
-| `last_name`   | `CharField`       | User's last name.                                   | Optional (nullable).        |
-| `email`       | `EmailField`      | User's unique email address (primary key).          | Required.                   |
-| `password`    | `CharField`       | User's password (stored in plain text).             | **Security Note:** Not secure. |
-| `role`        | `CharField`       | User's role, either `Student` or `Admin`.           | Default: `Student`.         |
+## **1. User Model**
 
-### **Event Model**
-| Field                 | Type              | Description                                         | Notes                       |
-|-----------------------|-------------------|-----------------------------------------------------|-----------------------------|
-| `event_name`          | `CharField`       | Name of the event.                                  | Required.                   |
-| `event_description`   | `TextField`       | Detailed description of the event.                 | Optional.                   |
-| `event_location`      | `CharField`       | Location where the event will take place.           | Required.                   |
-| `event_time`          | `DateTimeField`   | Date and time of the event.                        | Required.                   |
-| `event_published_by`  | `ForeignKey`      | Reference to the `User` who published the event.    | Nullable; `SET_NULL` on deletion. |
+### **Description**
+The `User` model stores information about users, including their role and department.
+
+### **Fields**
+| Field Name     | Type           | Required | Default      | Description                             |
+|----------------|----------------|----------|--------------|-----------------------------------------|
+| `first_name`   | `CharField`    | Yes      | None         | The first name of the user.             |
+| `last_name`    | `CharField`    | Yes      | None         | The last name of the user.              |
+| `email`        | `EmailField`   | Yes      | Primary Key  | The unique email address of the user.   |
+| `password`     | `CharField`    | Yes      | None         | The password for user authentication.   |
+| `role`         | `CharField`    | Yes      | `Student`    | The role of the user (`Student` or `Admin`). |
+| `created_at`   | `DateTimeField`| No       | Auto now add | The timestamp when the user was created. |
+| `department`   | `CharField`    | Yes      | `Khoury`     | The department of the user (`Khoury` or `COE`). |
+
+### **Role Choices**
+- `Student`
+- `Admin`
+
+### **Department Choices**
+- `Khoury`
+- `COE`
+
+### **Methods**
+- `__str__()`: Returns the email of the user.
+
+---
+
+## **2. Event Model**
+
+### **Description**
+The `Event` model stores information about events, including details, location, and the publishing user.
+
+### **Fields**
+| Field Name           | Type           | Required | Default         | Description                                     |
+|----------------------|----------------|----------|-----------------|-------------------------------------------------|
+| `event_id`           | `AutoField`    | No       | Auto increment  | The unique identifier for the event.           |
+| `event_name`         | `CharField`    | Yes      | None            | The name of the event.                         |
+| `event_description`  | `TextField`    | Yes      | None            | A detailed description of the event.           |
+| `event_location`     | `CharField`    | Yes      | None            | The location where the event will be held.      |
+| `event_time`         | `DateTimeField`| Yes      | None            | The time when the event will occur.            |
+| `event_published_by` | `ForeignKey`   | No       | Null            | A reference to the `User` who published the event. |
+| `event_created_at`   | `DateTimeField`| No       | Auto now add    | The timestamp when the event was created.      |
+| `event_status`       | `CharField`    | Yes      | `In process`    | The current status of the event.               |
+
+### **Methods**
+- `__str__()`: Returns the name of the event.
+
+---
+
+## **Relationships**
+- `Event.event_published_by`: A foreign key relationship to the `User` model, indicating which user published the event.
+
+---
+
+## **Default Values**
+- `User.role`: Defaults to `Student`.
+- `User.department`: Defaults to `Khoury`.
+- `Event.event_status`: Defaults to `In process`.
 
 ---
 

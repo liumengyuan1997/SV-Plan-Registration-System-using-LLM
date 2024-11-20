@@ -52,7 +52,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "dbapp.base64_middleware.Base64Middleware"
+    "dbapp.base64_middleware.Base64Middleware",
+    "dbapp.update_event_status_middleware.UpdateEventStatusMiddleware"
 ]
 
 REST_FRAMEWORK = {
@@ -148,7 +149,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "US/Pacific"
 
 USE_I18N = True
 

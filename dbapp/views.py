@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignupSerializer, EventSerializer
-from .models import User
+from .models import User, Event
 from .permission import IsAdminRole
 from rest_framework.permissions import AllowAny
 import base64
@@ -67,3 +67,22 @@ class PublishEventView(APIView):
             "message": "Validation failed.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+class ListEventView(APIView):
+    def get(self, request):
+        sort_param = request.query_params.get('sort', 'event_time')
+        valid_sort_fields = ['event_time', '-event_time', 'event_published_by', '-event_published_by']
+
+        if sort_param not in valid_sort_fields:
+            return Response({
+                "success": False,
+                "message": f"Invalid sort parameter. Must be one of {valid_sort_fields}."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        events = Event.objects.all().order_by(sort_param)
+        serialized_events = EventSerializer(events, many=True).data
+
+        return Response({
+            "success": True,
+            "count": len(serialized_events),
+            "events": serialized_events
+        }, status=status.HTTP_200_OK)

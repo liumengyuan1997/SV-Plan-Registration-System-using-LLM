@@ -100,35 +100,33 @@
 
 ### 3. Publish Event - `PublishEventView`
 
-**Endpoint**: `/publish-event/`  
+**Endpoint**: `/publishevent/`  
 **Method**: `POST`  
 **Permissions**: Admin only (requires `IsAdminRole` permission)  
 
 #### Request Example:
 ```json
 {
-    "title": "Hackathon 2024",
-    "description": "A global hackathon event for developers.",
-    "date": "2024-12-01T10:00:00Z",
-    "location": "San Francisco, CA"
+    "event_name": "Tech Conference 2024",
+    "event_description": "A conference for tech enthusiasts to network and share knowledge.",
+    "event_location": "San Francisco, CA",
+    "event_time": "2024-12-15T10:00:00Z"
 }
 ```
 
 #### Response:
 - **Success (201 Created)**:
   ```json
-  {
-      "success": true,
-      "message": "Event published successfully!",
-      "data": {
-          "id": 1,
-          "title": "Hackathon 2024",
-          "description": "A global hackathon event for developers.",
-          "date": "2024-12-01T10:00:00Z",
-          "location": "San Francisco, CA",
-          "event_published_by": 2
-      }
-  }
+{
+    "success": true,
+    "message": "Event published successfully!",
+    "data": {
+        "event_name": "Tech Conference 2024",
+        "event_description": "A conference for tech enthusiasts to network and share knowledge.",
+        "event_location": "San Francisco, CA",
+        "event_time": "2024-12-15T10:00:00Z"
+    }
+}
   ```
 
 - **Failure (400 Bad Request)**:

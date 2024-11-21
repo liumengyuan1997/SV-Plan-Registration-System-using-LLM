@@ -25,6 +25,15 @@ class User(models.Model):
 
 
 class Event(models.Model):
+    CATEGORY_CHOICES = [
+        ('Workshop', 'Workshop'),
+        ('Career Fair', 'Career Fair'),
+        ('Conference', 'Conference'),
+        ('Culture Festival', 'Culture Festival'),
+        ('Volunteer', 'Volunteer'),
+        ('Opportunity', 'Opportunity'),
+    ]
+
     event_id = models.AutoField(primary_key=True)
     event_name = models.CharField(max_length=255)
     event_description = models.TextField()
@@ -38,6 +47,7 @@ class Event(models.Model):
     )
     event_created_at = models.DateTimeField(auto_now_add=True)
     event_status = models.CharField(max_length=50, default='In process', null=False, blank=False)
+    event_category = models.CharField(max_length=50,choices=CATEGORY_CHOICES, default='Conference')
 
     def __str__(self):
         return self.event_name

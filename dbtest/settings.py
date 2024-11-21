@@ -53,7 +53,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "dbapp.base64_middleware.Base64Middleware",
-    "dbapp.update_event_status_middleware.UpdateEventStatusMiddleware"
 ]
 
 REST_FRAMEWORK = {
@@ -90,38 +89,38 @@ pymysql.version_info = (1, 4, 6, 'final', 0) # change mysqlclient version
 pymysql.install_as_MySQLdb()
 
 # [START db_setup]
-# if os.getenv('GAE_APPLICATION', None):
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
-#             'USER': 'root',
-#             'PASSWORD': ' ',
-#             'NAME': 'final_project',
-#         }
-#     }
-# else:
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'NAME': 'final_project',
-#             'USER': 'root',
-#             'PASSWORD': ' ',
-#             'HOST': '35.199.166.101',
-#             'PORT': '3306'
-#         }
-#     }
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'final',
-        'USER': 'root',
-        'PASSWORD': 'Admin.030609',
-        'HOST': '127.0.0.1',
-        'PORT': '3306'
+if os.getenv('GAE_APPLICATION', None):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
+            'USER': 'root',
+            'PASSWORD': ' ',
+            'NAME': 'final_project',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'final_project',
+            'USER': 'root',
+            'PASSWORD': ' ',
+            'HOST': '35.199.166.101',
+            'PORT': '3306'
+        }
+    }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'final',
+#         'USER': 'root',
+#         'PASSWORD': '',
+#         'HOST': '127.0.0.1',
+#         'PORT': '3306'
+#     }
+# }
 
 
 
@@ -149,11 +148,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "US/Pacific"
 
 USE_I18N = True
 
+TIME_ZONE = 'UTC'
 USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)

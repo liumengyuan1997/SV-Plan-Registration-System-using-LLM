@@ -1,3 +1,4 @@
+from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,12 +12,44 @@ from django.utils.timezone import now
 
 class SignUpView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
-        serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+        email = request.data.get('email')
+        password = request.data.get('password')
+        role = request.data.get('role', 'Student')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        department = request.data.get('department', 'Khoury')
+
+        if not email or not password or not role or not department:
+            return Response(
+                {"error": "Email, password, role, and department are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with connection.cursor() as cursor:
+                check_email_sql = "SELECT 1 FROM dbapp_user WHERE email = %s"
+                cursor.execute(check_email_sql, [email])
+                if cursor.fetchone():
+                    return Response(
+                        {"error": "Email already exists."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                insert_sql = """
+                    INSERT INTO dbapp_user (email, password, role, first_name, last_name, department, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                """
+                cursor.execute(insert_sql, [email, password, role, first_name, last_name, department])
+
             return Response({"message": "success!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response(
+                {"error": "An unexpected error occurred.", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class SignInView(APIView):
@@ -30,33 +63,74 @@ class SignInView(APIView):
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            with connection.cursor() as cursor:
+                query = """
+                    SELECT role, password 
+                    FROM dbapp_user 
+                    WHERE email = %s
+                """
+                cursor.execute(query, [email])
+                user = cursor.fetchone()
 
-        if password != user.password:
-            return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
+                if not user:
+                    return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({
-            "role": user.role,
-            "message": "Successful login",
-        }, status=status.HTTP_200_OK)
+                db_password, role = user[1], user[0]
+
+                if password != db_password:
+                    return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+                return Response({
+                    "role": role,
+                    "message": "Successful login",
+                }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "error": "An unexpected error occurred.",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PublishEventView(APIView):
-
     permission_classes = [IsAdminRole]
 
     def post(self, request):
         serializer = EventSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                event = serializer.save(event_published_by=request.user)
-                print(event)
+                data = serializer.validated_data
+                event_name = data.get('event_name')
+                event_description = data.get('event_description')
+                event_location = data.get('event_location')
+                event_time = data.get('event_time')
+                event_status = data.get('event_status', 'In process')
+                event_category = data.get('event_category')
+                event_published_by = request.user.email 
+
+                insertion_sql = """
+                    INSERT INTO dbapp_event 
+                    (event_name, event_description, event_location, event_time, 
+                     event_status, event_category, event_published_by, event_created_at) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                """
+
+                params = (
+                    event_name,
+                    event_description,
+                    event_location,
+                    event_time,
+                    event_status,
+                    event_category,
+                    event_published_by
+                )
+
+                with connection.cursor() as cursor:
+                    cursor.execute(insertion_sql, params)
+
                 return Response({
                     "success": True,
                     "message": "Event published successfully!",
-                    "data": EventSerializer(event).data
                 }, status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({
@@ -72,7 +146,11 @@ class PublishEventView(APIView):
 
 
 class ListEventView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
+        self.update_event_status()
+
         sort_param = request.query_params.get('sort', 'event_time')
         valid_sort_fields = [
             'event_time', '-event_time',
@@ -85,34 +163,99 @@ class ListEventView(APIView):
                 "success": False,
                 "message": f"Invalid sort parameter. Must be one of {valid_sort_fields}."
             }, status=status.HTTP_400_BAD_REQUEST)
-        events = Event.objects.all().order_by(sort_param)
-        serialized_events = EventSerializer(events, many=True).data
+
+
+        order_param = sort_param.lstrip('-')
+        order = 'DESC' if sort_param.startswith('-') else 'ASC'
+
+        select_sql = f"""
+            SELECT 
+                event_id, 
+                event_name, 
+                event_description, 
+                event_location, 
+                event_time, 
+                event_status, 
+                event_category, 
+                event_published_by, 
+                event_created_at 
+            FROM dbapp_event 
+            ORDER BY {order_param} {order}
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(select_sql)
+            rows = cursor.fetchall()
+
+        columns = [col[0] for col in cursor.description]
+        events = [dict(zip(columns, row)) for row in rows]
 
         return Response({
             "success": True,
-            "count": len(serialized_events),
-            "events": serialized_events
+            "events": EventSerializer(events, many=True).data
         }, status=status.HTTP_200_OK)
 
-
-class UpdateEventStatusView(APIView):
-    def get(self, request):
+    def update_event_status(self):
         current_time = now()
-        events = Event.objects.filter(event_status__in=["In process", "Overdue"])
-        updated_events = 0
-        for event in events:
-            if current_time >= event.event_time:
-                if event.event_status != "Overdue":
-                    event.event_status = "Overdue"
-                    event.save()
-                    updated_events += 1
-            else:
-                if event.event_status != "In process":
-                    event.event_status = "In process"
-                    event.save()
-                    updated_events += 1
 
-        return Response({
-            "success": True,
-            "message": f"Event statuses updated successfully. {updated_events} events modified."
-        }, status=status.HTTP_200_OK)
+        update_sql = """
+            UPDATE dbapp_event
+            SET event_status = 'Overdue'
+            WHERE event_status != 'Overdue' 
+            AND event_time <= %s
+        """
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(update_sql, [current_time])
+        except Exception as e:
+            print(f"Error updating event statuses: {str(e)}")
+
+
+class FilterEventByCategoryView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        event_category = request.query_params.get('category', None)
+
+        if not event_category:
+            return Response({
+                "success": False,
+                "message": "Missing required parameter: category."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            query = """
+                SELECT 
+                    event_id, 
+                    event_name, 
+                    event_description, 
+                    event_location, 
+                    event_time, 
+                    event_status, 
+                    event_category, 
+                    event_published_by, 
+                    event_created_at 
+                FROM dbapp_event 
+                WHERE event_category = %s
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(query, [event_category])
+                rows = cursor.fetchall()
+
+            columns = [col[0] for col in cursor.description]
+
+            events = [dict(zip(columns, row)) for row in rows]
+
+            return Response({
+                "success": True,
+                "count": len(events),
+                "events": EventSerializer(events, many=True).data
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": "An error occurred while filtering events by category.",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

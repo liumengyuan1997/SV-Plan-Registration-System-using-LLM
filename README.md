@@ -17,203 +17,214 @@
 - **Base URL**: `/api/`
 - **Content-Type**: `application/json`
 
----
+## Endpoints
 
-### 1. User Registration - `SignUpView`
+### 1. User Registration (`SignUpView`)
 
-**Endpoint**: `/signup/`  
-**Method**: `POST`  
-**Permissions**: Public (accessible to anyone)
+**URL:** `/signup/`  
+**Method:** `POST`  
+**Description:** Registers a new user.
 
-#### Request Example:
+#### Request Body:
 
 ```json
 {
-  "email": "test@example.com",
-  "password": "password123",
-  "role": "user",
   "first_name": "John",
-  "last_name": "Doe"
+  "last_name": "Doe",
+  "email": "john.doe@example.com",
+  "password": "securepassword123",
+  "role": "Student",
+  "department": "Khoury"
 }
 ```
 
 #### Response:
 
-- **Success (201 Created)**:
-
-  ```json
-  {
-    "message": "success!"
-  }
-  ```
-
-- **Failure (400 Bad Request)**:
-  ```json
-  {
-    "email": ["This field is required."],
-    "password": ["This field must be at least 8 characters."]
-  }
-  ```
-
----
-
-### 2. User Login - `SignInView`
-
-**Endpoint**: `/signin/`  
-**Method**: `POST`  
-**Permissions**: Public (accessible to anyone)
-
-#### Request Example:
+**Success:**
 
 ```json
 {
-  "email": "test@example.com",
-  "password": "password123"
+  "message": "success!"
 }
 ```
 
-#### Response:
-
-- **Success (200 OK)**:
-
-  ```json
-  {
-    "message": "Successful login"
-  }
-  ```
-
-- **Failure (400 Bad Request)**:
-
-  ```json
-  {
-    "error": "Email and password are required"
-  }
-  ```
-
-- **Failure (404 Not Found)**:
-
-  ```json
-  {
-    "error": "User does not exist"
-  }
-  ```
-
-- **Failure (401 Unauthorized)**:
-  ```json
-  {
-    "error": "Invalid email or password"
-  }
-  ```
-
----
-
-### 3. Publish Event - `PublishEventView`
-
-**Endpoint**: `/publishevent/`  
-**Method**: `POST`  
-**Permissions**: Admin only (requires `IsAdminRole` permission)
-
-#### Request Example:
+**Error:**
 
 ```json
 {
-  "event_name": "Tech Conference 2024",
-  "event_description": "A conference for tech enthusiasts to network and share knowledge.",
-  "event_location": "San Francisco, CA",
-  "event_time": "2024-12-15T10:00:00Z"
+  "errors": {
+    "field_name": ["Error message here."]
+  }
+}
+```
+
+---
+
+### 2. User Login (`SignInView`)
+
+**URL:** `/signin/`  
+**Method:** `POST`  
+**Description:** Authenticates a user.
+
+#### Request Body:
+
+```json
+{
+  "email": "john.doe@example.com",
+  "password": "securepassword123"
 }
 ```
 
 #### Response:
 
-- **Success (201 Created)**:
+**Success:**
 
-  ```json
-  {
-    "success": true,
-    "message": "Event published successfully!",
-    "data": {
-      "event_name": "Tech Conference 2024",
-      "event_description": "A conference for tech enthusiasts to network and share knowledge.",
-      "event_location": "San Francisco, CA",
-      "event_time": "2024-12-15T10:00:00Z"
-    }
-  }
-  ```
+```json
+{
+  "role": "Student",
+  "message": "Successful login"
+}
+```
 
-- **Failure (400 Bad Request)**:
+**Error:**
 
-  ```json
-  {
-    "success": false,
-    "message": "Validation failed.",
-    "errors": {
-      "title": ["This field is required."]
-    }
-  }
-  ```
+```json
+{
+  "error": "Invalid email or password"
+}
+```
 
-- **Failure (500 Internal Server Error)**:
-  ```json
-  {
-    "success": false,
-    "message": "An unexpected error occurred.",
-    "error": "Database error"
-  }
-  ```
+---
 
-### 4. List Events - `ListEventView`
+### 3. Publish Event (`PublishEventView`)
 
-**Endpoint**: `/events/`  
-**Method**: `GET`  
-**Permissions**: Public (accessible to anyone)
+**URL:** `/publish-event/`  
+**Method:** `POST`  
+**Description:** Publishes a new event. Admin role required.
 
-**Example Requests**
+#### Request Body:
 
-**_Fetch Events Sorted by `event_time` (Ascending)_**
-
-GET /events/?sort=event_time
-
-**_Fetch Events Sorted by `event_time` (Descending)_**
-
-GET /events/?sort=-event_time
-
-**_Fetch Events Sorted by `event_published_by` (Ascending)_**
-
-GET /events/?sort=event_published_by
-
-**_Fetch Events Sorted by `event_published_by` (Descending)_**
-
-GET /events/?sort=-event_published_by
-
-**_Fetch Events Sorted by `event_created_at` (Ascending)_**
-
-GET /events/?sort=event_created_at
-
-**_Fetch Events Sorted by `event_created_at` (Descending)_**
-
-GET /events/?sort=-event_created_at
+```json
+{
+  "event_name": "AI Workshop",
+  "event_description": "A hands-on workshop on Artificial Intelligence.",
+  "event_location": "Room 101",
+  "event_time": "2024-11-30T14:00:00Z",
+  "event_category": "Workshop"
+}
+```
 
 #### Response:
 
-- **Success (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "count": 8,
-    "events": [
-        {
-            "event_id": 4,
-            "event_name": "Sample Event123",
-            "event_description": "This is a description of the event.",
-            "event_location": "Conference Room A",
-            "event_time": "2024-11-19T14:43:45-08:00",
-            "event_status": "Overdue"
-        },
-        ...
-      ]
+**Success:**
+
+```json
+{
+  "success": true,
+  "message": "Event published successfully!"
+}
+```
+
+**Error:**
+
+```json
+{
+  "success": false,
+  "message": "Validation failed.",
+  "errors": {
+    "field_name": ["Error message here."]
   }
-  ```
+}
+```
+
+---
+
+### 4. List All Events (`ListEventView`)
+
+**URL:** `/list-events/`  
+**Method:** `GET`  
+**Description:** Lists all events with optional sorting.
+
+#### Query Parameters:
+
+- `sort` (optional): Sorting parameter (`event_time`, `-event_time`, `event_created_at`, `-event_created_at`).
+
+#### Response:
+
+**Success:**
+
+```json
+{
+  "success": true,
+  "events": [
+    {
+      "event_id": 1,
+      "event_name": "AI Workshop",
+      "event_description": "A hands-on workshop on AI.",
+      "event_location": "Room 101",
+      "event_time": "2024-11-30T14:00:00Z",
+      "event_status": "In process",
+      "event_category": "Workshop",
+      "event_published_by": "admin@example.com",
+      "event_created_at": "2024-11-20T14:00:00Z"
+    }
+  ]
+}
+```
+
+**Error:**
+
+```json
+{
+  "success": false,
+  "message": "Invalid sort parameter."
+}
+```
+
+---
+
+### 5. Filter Events by Category (`FilterEventByCategoryView`)
+
+**URL:** `/filter-events/`  
+**Method:** `GET`  
+**Description:** Filters events by category.
+
+#### Query Parameters:
+
+- `category` (required): The category of events to filter by.
+
+#### Response:
+
+**Success:**
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "events": [
+    {
+      "event_id": 1,
+      "event_name": "AI Workshop",
+      "event_description": "A hands-on workshop on AI.",
+      "event_location": "Room 101",
+      "event_time": "2024-11-30T14:00:00Z",
+      "event_status": "In process",
+      "event_category": "Workshop",
+      "event_published_by": "admin@example.com",
+      "event_created_at": "2024-11-20T14:00:00Z"
+    }
+  ]
+}
+```
+
+**Error:**
+
+```json
+{
+  "success": false,
+  "message": "Missing required parameter: category."
+}
+```
 
 ---
 
@@ -227,34 +238,63 @@ This file contains serializer classes for the `User` and `Event` models, providi
 
 ## 1. **SignupSerializer**
 
-The `SignupSerializer` is used to handle user registration, including validation and creation of new `User` instances.
+This serializer is used to validate and create a new user when a user signs up.
 
-### **Fields**
+### Fields:
 
-| Field        | Type        | Description                            | Validation      |
-| ------------ | ----------- | -------------------------------------- | --------------- |
-| `email`      | `CharField` | User's email address.                  | Must be unique. |
-| `password`   | `CharField` | User's password. Write-only.           | Required.       |
-| `role`       | `CharField` | User's role (e.g., Admin, User, etc.). | Required.       |
-| `first_name` | `CharField` | User's first name.                     | Optional.       |
-| `last_name`  | `CharField` | User's last name.                      | Optional.       |
+- **email** (required): The user's email address. It must be unique.
+- **password** (required, write-only): The user's password. It will not be serialized in responses.
+- **role** (required): The user's role. Possible values: `Student`, `Admin`.
+- **first_name** (optional): The user's first name.
+- **last_name** (optional): The user's last name.
+- **department** (required): The user's department. Possible values: `Khoury`, `COE`.
+
+### Validation Rules:
+
+1. **Email Validation**:
+   - Checks if the provided email already exists in the database.
+   - Raises a `ValidationError` with the message `"Email already exists."` if the email is not unique.
+
+### Methods:
+
+1. **`validate_email(self, value)`**:
+
+   - Validates the uniqueness of the email field.
+
+2. **`create(self, validated_data)`**:
+   - Creates a new `User` instance using the validated data.
 
 ---
 
 ## 2. **EventSerializer**
 
-The `EventSerializer` is used to handle the creation and validation of `Event` objects.
+This serializer is used to validate and represent event data.
 
-### **Fields**
+### Fields:
 
-| Field               | Type            | Description                 | Validation |
-| ------------------- | --------------- | --------------------------- | ---------- |
-| `event_name`        | `CharField`     | Name of the event.          | Required.  |
-| `event_description` | `CharField`     | Detailed description.       | Optional.  |
-| `event_location`    | `CharField`     | Location of the event.      | Required.  |
-| `event_time`        | `DateTimeField` | Date and time of the event. | Required.  |
+- **event_id** (read-only): The unique identifier of the event.
+- **event_name** (required): The name of the event.
+- **event_description** (required): A detailed description of the event.
+- **event_location** (required): The location where the event will take place.
+- **event_time** (required): The time when the event is scheduled. It must be in ISO 8601 format.
+- **event_status** (read-only, default: `In process`): The current status of the event.
+- **event_category** (required): The category of the event. Possible values:
+  - `Workshop`
+  - `Career Fair`
+  - `Conference`
+  - `Culture Festival`
+  - `Volunteer`
+  - `Opportunity`
+
+### Validation Rules:
+
+1. All required fields must be provided.
+2. **DateTime Field**:
+   - Ensures `event_time` is a valid datetime in ISO 8601 format.
 
 ---
+
+##
 
 # Permissions Documentation
 
@@ -277,76 +317,39 @@ The `IsAdminRole` class is a custom permission that ensures the user:
 
 ## File: `models.py`
 
-## **1. User Model**
+## User Model
 
-### **Description**
-
-The `User` model stores information about users, including their role and department.
-
-### **Fields**
-
-| Field Name   | Type            | Required | Default      | Description                                     |
-| ------------ | --------------- | -------- | ------------ | ----------------------------------------------- |
-| `first_name` | `CharField`     | Yes      | None         | The first name of the user.                     |
-| `last_name`  | `CharField`     | Yes      | None         | The last name of the user.                      |
-| `email`      | `EmailField`    | Yes      | Primary Key  | The unique email address of the user.           |
-| `password`   | `CharField`     | Yes      | None         | The password for user authentication.           |
-| `role`       | `CharField`     | Yes      | `Student`    | The role of the user (`Student` or `Admin`).    |
-| `created_at` | `DateTimeField` | No       | Auto now add | The timestamp when the user was created.        |
-| `department` | `CharField`     | Yes      | `Khoury`     | The department of the user (`Khoury` or `COE`). |
-
-### **Role Choices**
-
-- `Student`
-- `Admin`
-
-### **Department Choices**
-
-- `Khoury`
-- `COE`
-
-### **Methods**
-
-- `__str__()`: Returns the email of the user.
+| Field Name | Field Type               | Additional Information                            |
+| ---------- | ------------------------ | ------------------------------------------------- |
+| first_name | CharField                | max_length=50                                     |
+| last_name  | CharField                | max_length=50                                     |
+| email      | EmailField (Primary Key) | Primary Key                                       |
+| password   | CharField                | max_length=20                                     |
+| role       | CharField (Choices)      | Choices: ['Student', 'Admin'], Default='Student'  |
+| department | CharField (Choices)      | Choices: ['Khoury', 'COE'], Default='Khoury'      |
+| created_at | DateTimeField            | Auto-generated timestamp when the user is created |
 
 ---
 
-## **2. Event Model**
+## Event Model
 
-### **Description**
-
-The `Event` model stores information about events, including details, location, and the publishing user.
-
-### **Fields**
-
-| Field Name           | Type            | Required | Default        | Description                                        |
-| -------------------- | --------------- | -------- | -------------- | -------------------------------------------------- |
-| `event_id`           | `AutoField`     | No       | Auto increment | The unique identifier for the event.               |
-| `event_name`         | `CharField`     | Yes      | None           | The name of the event.                             |
-| `event_description`  | `TextField`     | Yes      | None           | A detailed description of the event.               |
-| `event_location`     | `CharField`     | Yes      | None           | The location where the event will be held.         |
-| `event_time`         | `DateTimeField` | Yes      | None           | The time when the event will occur.                |
-| `event_published_by` | `ForeignKey`    | No       | Null           | A reference to the `User` who published the event. |
-| `event_created_at`   | `DateTimeField` | No       | Auto now add   | The timestamp when the event was created.          |
-| `event_status`       | `CharField`     | Yes      | `In process`   | The current status of the event.                   |
-
-### **Methods**
-
-- `__str__()`: Returns the name of the event.
+| Field Name         | Field Type                              | Additional Information                                                                                                   |
+| ------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| event_id           | AutoField (Primary Key)                 | Auto Increment                                                                                                           |
+| event_name         | CharField                               | max_length=255                                                                                                           |
+| event_description  | TextField                               | Detailed event description                                                                                               |
+| event_location     | CharField                               | max_length=255                                                                                                           |
+| event_time         | DateTimeField                           | ISO 8601 format                                                                                                          |
+| event_published_by | ForeignKey to User (on_delete=SET_NULL) | If User deleted, set to NULL                                                                                             |
+| event_status       | CharField (Choices)                     | Default='In process'                                                                                                     |
+| event_category     | CharField (Choices)                     | Default='Conference', Choices: ['Workshop', 'Career Fair', 'Conference', 'Culture Festival', 'Volunteer', 'Opportunity'] |
 
 ---
 
-## **Relationships**
+## Relationships
 
-- `Event.event_published_by`: A foreign key relationship to the `User` model, indicating which user published the event.
-
----
-
-## **Default Values**
-
-- `User.role`: Defaults to `Student`.
-- `User.department`: Defaults to `Khoury`.
-- `Event.event_status`: Defaults to `In process`.
+- A `User` can publish multiple events (`One-to-Many` relationship via `ForeignKey` in `Event`).
+- If the `User` is deleted, events they published will remain, but the `event_published_by` field will be set to `NULL`.
 
 ---
 

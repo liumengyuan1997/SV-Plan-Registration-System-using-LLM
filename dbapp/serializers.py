@@ -21,6 +21,11 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(required=True)
+    event_description = serializers.CharField(required=True)
+    event_location = serializers.CharField(required=True)
+    event_time = serializers.DateTimeField(required=True)
+    event_category = serializers.CharField(required=True)
     class Meta:
         model = Event
-        fields = ['event_id','event_name', 'event_description', 'event_location', 'event_time', 'event_status']
+        fields = ['event_id','event_name', 'event_description', 'event_location', 'event_time', 'event_status', 'event_category']

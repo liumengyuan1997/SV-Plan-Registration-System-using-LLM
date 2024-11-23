@@ -202,6 +202,7 @@ class ListEventView(APIView):
             UPDATE dbapp_event
             SET event_status = 'Overdue'
             WHERE event_status != 'Overdue' 
+            AND event_status != 'Attended'
             AND event_time <= %s
         """
         try:
@@ -213,38 +214,69 @@ class ListEventView(APIView):
 
 class FilterEventByCategoryView(APIView):
     permission_classes = [AllowAny]
-    
-    def get(self, request):
-        event_category = request.query_params.get('category', None)
 
-        if not event_category:
+    def get(self, request):
+        event_categories = request.query_params.getlist('category', None) 
+        event_status = request.query_params.get('status', None)
+
+        if event_status:
+            event_status = event_status.capitalize().strip() 
+
+        valid_statuses = ['Upcoming', 'Attended', 'Overdue']
+        print(event_status)
+
+        if event_status and event_status not in valid_statuses:
             return Response({
                 "success": False,
-                "message": "Missing required parameter: category."
+                "message": f"Invalid status parameter. Must be one of {valid_statuses}."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            query = """
-                SELECT 
-                    event_id, 
-                    event_name, 
-                    event_description, 
-                    event_location, 
-                    event_time, 
-                    event_status, 
-                    event_category, 
-                    event_published_by, 
-                    event_created_at 
-                FROM dbapp_event 
-                WHERE event_category = %s
-            """
+        filters = []
+        params = []
 
+        if event_categories:
+            filters.append(f"event_category IN ({','.join(['%s'] * len(event_categories))})")
+            params.extend(event_categories)
+
+ 
+        if event_status:
+            filters.append("event_status = %s")
+            params.append(event_status)
+        else:
+
+            filters.append("event_status IN ('Overdue', 'In process')")
+
+
+        if not filters:
+            return Response({
+                "success": False,
+                "message": "At least one filtering parameter ('category' or 'status') is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        filter_query = " AND ".join(filters)
+
+        query = f"""
+            SELECT 
+                event_id, 
+                event_name, 
+                event_description, 
+                event_location, 
+                event_time, 
+                event_status, 
+                event_category, 
+                event_published_by, 
+                event_created_at 
+            FROM dbapp_event 
+            WHERE {filter_query}
+        """
+
+        try:
             with connection.cursor() as cursor:
-                cursor.execute(query, [event_category])
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
 
             columns = [col[0] for col in cursor.description]
-
             events = [dict(zip(columns, row)) for row in rows]
 
             return Response({
@@ -256,6 +288,58 @@ class FilterEventByCategoryView(APIView):
         except Exception as e:
             return Response({
                 "success": False,
-                "message": "An error occurred while filtering events by category.",
+                "message": "An error occurred while filtering events.",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UpdateEventStatusView(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, event_id):
+        new_status = request.data.get('status', None)
+
+        valid_statuses = ['Upcoming', 'Attended', 'Overdue', 'Unattended']
+
+        if new_status:
+            new_status = new_status.capitalize().strip() 
+
+        if new_status == 'Unattended':
+            new_status = 'Upcoming'
+
+        print(f"Received event_status: {new_status}")
+
+
+        if new_status not in valid_statuses:
+            return Response({
+                "success": False,
+                "message": f"Invalid status. Must be one of {valid_statuses}."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        update_sql = """
+            UPDATE dbapp_event
+            SET event_status = %s
+            WHERE event_id = %s
+        """
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(update_sql, [new_status, event_id])
+
+                if cursor.rowcount == 0:
+                    return Response({
+                        "success": False,
+                        "message": f"No event found with id {event_id}."
+                    }, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({
+                "success": True,
+                "message": f"Event status updated to '{new_status}'."
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": "An error occurred while updating the event status.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -46,7 +46,7 @@ class Event(models.Model):
         db_column='event_published_by'
     )
     event_created_at = models.DateTimeField(auto_now_add=True)
-    event_status = models.CharField(max_length=50, default='In process', null=False, blank=False)
+    event_status = models.CharField(max_length=50, default='Upcoming', null=False, blank=False)
     event_category = models.CharField(max_length=50,choices=CATEGORY_CHOICES, default='Conference')
 
     def __str__(self):

@@ -84,9 +84,9 @@ WSGI_APPLICATION = "dbtest.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import pymysql # noqa: 402
-pymysql.version_info = (1, 4, 6, 'final', 0) # change mysqlclient version
-pymysql.install_as_MySQLdb()
+# import pymysql # noqa: 402
+# pymysql.version_info = (1, 4, 6, 'final', 0) # change mysqlclient version
+# pymysql.install_as_MySQLdb()
 
 # [START db_setup]
 if os.getenv('GAE_APPLICATION', None):

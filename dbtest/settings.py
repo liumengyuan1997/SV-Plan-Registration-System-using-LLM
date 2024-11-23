@@ -95,14 +95,14 @@ if os.getenv('GAE_APPLICATION', None):
             'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
             'USER': 'root',
             'PASSWORD': ' ',
-            'NAME': 'db_group4',
+            'NAME': 'final_project',
         }
     }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'db_group4',
+            'NAME': 'final_project',
             'USER': 'root',
             'PASSWORD': ' ',
             'HOST': '35.199.166.101',

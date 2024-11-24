@@ -10,7 +10,7 @@ urlpatterns = [
     path('tasks/<studentEmail>', views.AllTasksAPIView.as_view(), name='all_tasks'),
     path('tasks/sort-due-date/<studentEmail>', views.SortTasksByDueDateAPIView.as_view(), name='sort_due_date'),
     path('tasks/sort-entry-date/<studentEmail>', views.SortTasksByEntryDateAPIView.as_view(), name='sort_entry_date'),
-    path('tasks/filter-tasks/<studentEmail>', views.FilterTaskByCategoryView.as_view(), name='filter_tasks')
+    path('tasks/filter-tasks/<studentEmail>', views.FilterTaskByCategoryView.as_view(), name='filter_tasks'),
     path("admin/", admin.site.urls),
     path('api/', include('dbapp.urls'))
 ]

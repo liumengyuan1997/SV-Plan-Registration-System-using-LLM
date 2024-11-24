@@ -13,3 +13,6 @@ handlers:
 - url: /.*
   script: auto
 # [END django_app]
+
+env_variables:
+  GOOGLE_APPLICATION_CREDENTIALS: "credentials.json"

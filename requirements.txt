@@ -3,6 +3,16 @@ Django>=4.2,<4.3
 djangorestframework==3.15.2
 mysqlclient==2.1.1
 PyMySQL==1.0.2
+openai==0.28.0
+PyPDF2==3.0.1
+sqlparse==0.5.1
+pillow==11.0.0
+pytesseract==0.3.13
+python-docx==1.1.2
+python-dateutil==2.9.0.post0
+django-storages
+google-cloud-storage
+djangorestframework==3.15.2
 pytz==2024.2
 sqlparse==0.5.2
 django-cors-headers==4.6.0

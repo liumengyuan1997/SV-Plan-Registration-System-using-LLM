@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import User, Event
+from .models import UploadedFile, User, Event
+
+class UploadedFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadedFile
+        fields = ('file',)
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -18,7 +23,6 @@ class SignupSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create(**validated_data)
-
 
 class EventSerializer(serializers.ModelSerializer):
     event_name = serializers.CharField(required=True)

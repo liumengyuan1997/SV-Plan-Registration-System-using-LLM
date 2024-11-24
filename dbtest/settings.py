@@ -15,7 +15,7 @@ import os
 from google.oauth2.service_account import Credentials
 
 
-SERVICE_ACCOUNT_FILE = '/Users/liumengyuan/Desktop/CS5200/w10/lab10/dbtest/credentials.json'
+SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

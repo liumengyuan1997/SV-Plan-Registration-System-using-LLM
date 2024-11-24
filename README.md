@@ -232,7 +232,7 @@ The SV Plan Registration System, managed by Khoury College, streamlines task man
   }
   ```
 ---
-### 5. Filter Tasks by Category (`FilterTaskByCategoryView`)
+### 7. Filter Tasks by Category (`FilterTaskByCategoryView`)
 
 **URL:** `tasks/filter-tasks/<studentEmail>`  
 **Method:** `GET`  

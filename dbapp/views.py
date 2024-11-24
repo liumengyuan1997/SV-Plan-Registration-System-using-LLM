@@ -346,6 +346,7 @@ class UpdateEventStatusView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
           
 class FileUploadAPIView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request, student_email):
         user = get_object_or_404(User, email=student_email)
         serializer = UploadedFileSerializer(data=request.data)
@@ -391,6 +392,7 @@ class FileUploadAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskDetailAPIView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, student_email, task_id):
         # Retrieve the task
         task = get_object_or_404(Task, pk=task_id, studentEmail=student_email)
@@ -416,6 +418,7 @@ class TaskDetailAPIView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class UpdateTaskAPIView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         student_email = kwargs.get('studentEmail')  # Correct key is based on URL
         task_id = kwargs.get('task_id')
@@ -430,6 +433,8 @@ class UpdateTaskAPIView(APIView):
         task_status = request.data.get('taskStatus')
         task_category = request.data.get('taskCategory')
 
+        print(task_name)
+        print(due_date)
         if task_name:
             task.taskName = task_name
 
@@ -463,6 +468,7 @@ class UpdateTaskAPIView(APIView):
         }, status=status.HTTP_200_OK)
 
 class AllTasksAPIView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, studentEmail):
         if not studentEmail:
             return Response({
@@ -480,6 +486,7 @@ class AllTasksAPIView(APIView):
         return Response({'tasks': tasks_data}, status=status.HTTP_200_OK)
 
 class SortTasksByDueDateAPIView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, studentEmail):
         # Get the sorting order from query parameters
         order = request.GET.get('order', 'asc').lower()
@@ -496,6 +503,7 @@ class SortTasksByDueDateAPIView(APIView):
         return Response({'tasks': tasks_data}, status=status.HTTP_200_OK)
 
 class SortTasksByEntryDateAPIView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, studentEmail):
         # Get the sorting order from query parameters
         order = request.GET.get('order', 'asc').lower()
@@ -512,6 +520,7 @@ class SortTasksByEntryDateAPIView(APIView):
         return Response({'tasks': tasks_data}, status=200)
 
 class FilterTaskByCategoryView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, studentEmail):
         task_name = request.query_params.get('taskName', None)
         entry_date = validate_date(request.query_params.get('entryDate', None))

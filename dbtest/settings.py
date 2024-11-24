@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from google.oauth2.service_account import Credentials
+
+
+SERVICE_ACCOUNT_FILE = '/Users/liumengyuan/Desktop/CS5200/w10/lab10/dbtest/credentials.json'
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +34,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 GS_BUCKET_NAME = 'db-group4-438622.appspot.com'
-GS_CREDENTIALS = None
+GS_CREDENTIALS = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [

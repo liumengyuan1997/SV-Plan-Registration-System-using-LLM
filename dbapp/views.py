@@ -8,6 +8,11 @@ from .permission import IsAdminRole
 from rest_framework.permissions import AllowAny
 import base64
 from django.utils.timezone import now
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import make_aware
+import pytz
+from datetime import datetime
+
 
 
 class SignUpView(APIView):
@@ -218,12 +223,17 @@ class FilterEventByCategoryView(APIView):
     def get(self, request):
         event_categories = request.query_params.getlist('category', None) 
         event_status = request.query_params.get('status', None)
+        start_time = request.query_params.get('start_time', None)
+        end_time = request.query_params.get('end_time', None)
+
+
+
+        print(start_time)
 
         if event_status:
             event_status = event_status.capitalize().strip() 
 
         valid_statuses = ['Upcoming', 'Attended', 'Overdue']
-        print(event_status)
 
         if event_status and event_status not in valid_statuses:
             return Response({
@@ -242,9 +252,39 @@ class FilterEventByCategoryView(APIView):
         if event_status:
             filters.append("event_status = %s")
             params.append(event_status)
-        else:
 
-            filters.append("event_status IN ('Overdue', 'In process')")
+        try:
+            if start_time:
+                start_time = parse_datetime(start_time)
+                if not start_time:
+                    raise ValueError("Invalid start_time format.")
+                start_time = start_time.astimezone(pytz.UTC) 
+                start_time = start_time.strftime('%Y-%m-%d %H:%M:%S.%f')  
+                filters.append("event_time >= %s")
+                params.append(start_time)
+
+            if end_time:
+                end_time = parse_datetime(end_time)  
+                if not end_time:
+                    raise ValueError("Invalid end_time format.")
+                end_time = end_time.astimezone(pytz.UTC)
+                end_time = end_time.strftime('%Y-%m-%d %H:%M:%S.%f')  
+                filters.append("event_time <= %s")
+                params.append(end_time)
+
+            if start_time and end_time and start_time > end_time:
+                return Response({
+                    "success": False,
+                    "message": "Invalid time range: start_time must be earlier than end_time."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValueError as e:
+            return Response({
+                "success": False,
+                "message": "Invalid time format. Use ISO 8601 format (e.g., '2024-11-01T00:00:00').",
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
         if not filters:
@@ -271,6 +311,9 @@ class FilterEventByCategoryView(APIView):
             WHERE {filter_query}
         """
 
+        print("sql: ", query)
+        print("params: ", params)
+
         try:
             with connection.cursor() as cursor:
                 cursor.execute(query, params)
@@ -291,6 +334,7 @@ class FilterEventByCategoryView(APIView):
                 "message": "An error occurred while filtering events.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class UpdateEventStatusView(APIView):
@@ -343,3 +387,5 @@ class UpdateEventStatusView(APIView):
                 "message": "An error occurred while updating the event status.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

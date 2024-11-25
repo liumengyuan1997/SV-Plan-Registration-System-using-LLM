@@ -394,11 +394,14 @@ class FileUploadAPIView(APIView):
         user = get_object_or_404(User, email=student_email)
         serializer = UploadedFileSerializer(data=request.data)
         if serializer.is_valid():
+            uploaded_file = request.FILES['file']
+            content_type = uploaded_file.content_type
+
             uploaded_file = serializer.save()
             file = uploaded_file.file
 
             # Process the uploaded file content
-            content = process_file_content(file)
+            content = process_file_content(file, content_type)
             if content:
                 task_name, task_description, due_date = generate_task_description_and_due_date(content)
 

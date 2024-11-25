@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 
 
 openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
-def process_file_content(file):
+def process_file_content(file, content_type):
     if file.name.endswith('.txt'):
         return file.read().decode('utf-8')
     elif file.name.endswith('.pdf'):
@@ -19,7 +19,7 @@ def process_file_content(file):
     elif file.name.endswith('.docx'):
         doc = Document(file)
         return '\n'.join([p.text for p in doc.paragraphs])
-    elif file.content_type.startswith('image/'):
+    elif content_type.startswith('image/'):
         image = Image.open(file)
         return pytesseract.image_to_string(image)
     else:

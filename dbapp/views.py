@@ -715,7 +715,6 @@ class ExecuteSQLView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-
             sql_query = request.data.get("sql_query")
             if not sql_query:
                 return Response({"error": "'sql_query' is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -728,7 +727,6 @@ class ExecuteSQLView(APIView):
 
     def execute_sql(self, sql_query):
         try:
-            connection = MySQLdb.connect(**db_config)
             cursor = connection.cursor()
 
             cursor.execute(sql_query)

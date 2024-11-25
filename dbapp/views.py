@@ -16,6 +16,13 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 import pytz
 from datetime import datetime
+from django.conf import settings
+import json
+import MySQLdb
+import openai
+
+openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
+
 
 class SignUpView(APIView):
     permission_classes = [AllowAny]
@@ -111,7 +118,7 @@ class PublishEventView(APIView):
                 event_description = data.get('event_description')
                 event_location = data.get('event_location')
                 event_time = data.get('event_time')
-                event_status = data.get('event_status', 'In process')
+                event_status = data.get('event_status', 'Upcoming')
                 event_category = data.get('event_category')
                 event_published_by = request.user.email 
 
@@ -150,6 +157,7 @@ class PublishEventView(APIView):
             "message": "Validation failed.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ListEventView(APIView):
     permission_classes = [AllowAny]
@@ -387,7 +395,8 @@ class UpdateEventStatusView(APIView):
                 "message": "An error occurred while updating the event status.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-          
+
+
 class FileUploadAPIView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, student_email):
@@ -437,6 +446,7 @@ class FileUploadAPIView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class TaskDetailAPIView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, student_email, task_id):
@@ -462,6 +472,7 @@ class TaskDetailAPIView(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
 
 class UpdateTaskAPIView(APIView):
     permission_classes = [AllowAny]
@@ -513,6 +524,7 @@ class UpdateTaskAPIView(APIView):
             'taskCategory': task.taskCategory
         }, status=status.HTTP_200_OK)
 
+
 class AllTasksAPIView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, studentEmail):
@@ -531,6 +543,7 @@ class AllTasksAPIView(APIView):
 
         return Response({'tasks': tasks_data}, status=status.HTTP_200_OK)
 
+
 class SortTasksByDueDateAPIView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, studentEmail):
@@ -548,6 +561,7 @@ class SortTasksByDueDateAPIView(APIView):
 
         return Response({'tasks': tasks_data}, status=status.HTTP_200_OK)
 
+
 class SortTasksByEntryDateAPIView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, studentEmail):
@@ -564,6 +578,7 @@ class SortTasksByEntryDateAPIView(APIView):
         tasks_data = [task_detail_data(task.taskId) for task in tasks]
 
         return Response({'tasks': tasks_data}, status=200)
+
 
 class FilterTaskByCategoryView(APIView):
     permission_classes = [AllowAny]
@@ -642,3 +657,89 @@ class FilterTaskByCategoryView(APIView):
                 "message": "An error occurred while filtering tasks.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GenerateSQLView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user_input = request.data.get("user_input")
+            if not user_input:
+                return Response({"error": "'user_input' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            schema = self.get_database_schema()
+
+            prompt = f"""
+            The database schema is as follows:
+            {schema}
+
+            The user has provided the following requirement: "{user_input}".
+
+            Generate a valid SQL query based on the user's requirement. Return only the SQL query, no explanations.
+            """
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are an expert SQL assistant."},
+                    {"role": "user", "content": prompt},
+                ],
+                timeout=120
+            )
+            sql_query = response['choices'][0]['message']['content'].strip()
+
+            return Response({"sql_query": sql_query}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_database_schema(self):
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SHOW TABLES;")
+            tables = cursor.fetchall()
+
+            schema = {}
+            for (table_name,) in tables:
+                cursor.execute(f"DESCRIBE {table_name};")
+                columns = cursor.fetchall()
+                schema[table_name] = [{"Field": col[0], "Type": col[1]} for col in columns]
+
+            return schema
+        except Exception as e:
+            raise Exception(f"Error fetching schema: {e}")
+
+
+class ExecuteSQLView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            sql_query = request.data.get("sql_query")
+            if not sql_query:
+                return Response({"error": "'sql_query' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            execution_result = self.execute_sql(sql_query)
+            return Response({"result": execution_result}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def execute_sql(self, sql_query):
+        try:
+            cursor = connection.cursor()
+
+            cursor.execute(sql_query)
+            if sql_query.strip().upper().startswith("SELECT"):
+                rows = cursor.fetchall()
+                result = [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
+            else:
+                connection.commit()
+                result = {"message": "Query executed successfully."}
+
+            cursor.close()
+            connection.close()
+            return result
+
+        except Exception as e:
+            raise Exception(f"Error executing SQL query: {e}")

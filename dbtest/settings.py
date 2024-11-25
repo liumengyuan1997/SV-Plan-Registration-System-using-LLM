@@ -102,38 +102,38 @@ WSGI_APPLICATION = "dbtest.wsgi.application"
 # pymysql.install_as_MySQLdb()
 
 # [START db_setup]
-# if os.getenv('GAE_APPLICATION', None):
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
-#             'USER': 'root',
-#             'PASSWORD': ' ',
-#             'NAME': 'final_project',
-#         }
-#     }
-# else:
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'NAME': 'final_project',
-#             'USER': 'root',
-#             'PASSWORD': ' ',
-#             'HOST': '35.199.166.101',
-#             'PORT': '3306'
-#         }
-#     }
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'final',
-        'USER': 'root',
-        'PASSWORD': 'Admin.030609',
-        'HOST': '127.0.0.1',
-        'PORT': '3306'
+if os.getenv('GAE_APPLICATION', None):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
+            'USER': 'root',
+            'PASSWORD': ' ',
+            'NAME': 'final_project',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'final_project',
+            'USER': 'root',
+            'PASSWORD': ' ',
+            'HOST': '35.199.166.101',
+            'PORT': '3306'
+        }
+    }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'final',
+#         'USER': 'root',
+#         'PASSWORD': '',
+#         'HOST': '127.0.0.1',
+#         'PORT': '3306'
+#     }
+# }
 
 
 

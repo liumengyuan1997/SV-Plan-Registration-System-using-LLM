@@ -21,6 +21,9 @@ import json
 import MySQLdb
 import openai
 
+openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
+
+
 class SignUpView(APIView):
     permission_classes = [AllowAny]
 
@@ -681,6 +684,7 @@ class GenerateSQLView(APIView):
                     {"role": "system", "content": "You are an expert SQL assistant."},
                     {"role": "user", "content": prompt},
                 ],
+                timeout=120
             )
             sql_query = response['choices'][0]['message']['content'].strip()
 
@@ -691,13 +695,6 @@ class GenerateSQLView(APIView):
 
     def get_database_schema(self):
         try:
-            db_config = {
-                "host": settings.DATABASES['default']['HOST'],
-                "user": settings.DATABASES['default']['USER'],
-                "password": settings.DATABASES['default']['PASSWORD'],
-                "database": settings.DATABASES['default']['NAME'],
-            }
-            connection = MySQLdb.connect(**db_config)
             cursor = connection.cursor()
             cursor.execute("SHOW TABLES;")
             tables = cursor.fetchall()
@@ -731,12 +728,6 @@ class ExecuteSQLView(APIView):
 
     def execute_sql(self, sql_query):
         try:
-            db_config = {
-                "host": settings.DATABASES['default']['HOST'],
-                "user": settings.DATABASES['default']['USER'],
-                "password": settings.DATABASES['default']['PASSWORD'],
-                "database": settings.DATABASES['default']['NAME'],
-            }
             connection = MySQLdb.connect(**db_config)
             cursor = connection.cursor()
 

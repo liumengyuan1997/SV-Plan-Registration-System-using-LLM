@@ -7,6 +7,7 @@ from dateutil.parser import parse
 from .models import Task, UploadedFile
 from datetime import datetime
 from django.shortcuts import get_object_or_404
+from google.cloud import vision
 
 
 openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
@@ -20,8 +21,14 @@ def process_file_content(file, content_type):
         doc = Document(file)
         return '\n'.join([p.text for p in doc.paragraphs])
     elif content_type.startswith('image/'):
-        image = Image.open(file)
-        return pytesseract.image_to_string(image)
+        content = file.read()
+        image = vision.Image(content=content)
+        vision_client = vision.ImageAnnotatorClient()
+        response = vision_client.text_detection(image=image)
+        if response.error.message:
+            raise Exception(f"Google Vision API error: {response.error.message}")
+        texts = response.text_annotations
+        return texts[0].description if texts else None
     else:
         return None
 

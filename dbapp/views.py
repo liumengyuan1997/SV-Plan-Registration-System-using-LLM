@@ -142,6 +142,26 @@ class PublishEventView(APIView):
                 with connection.cursor() as cursor:
                     cursor.execute(insertion_sql, params)
 
+                    event_id_query = "SELECT LAST_INSERT_ID();"
+                    cursor.execute(event_id_query)
+                    event_id = cursor.fetchone()[0]
+
+                    student_query = """
+                        SELECT email FROM dbapp_user WHERE role = 'Student';
+                    """
+                    cursor.execute(student_query)
+                    students = cursor.fetchall()
+
+                    if students:
+                        student_event_insertion_sql = """
+                            INSERT INTO dbapp_studentevent (student_id, event_id, event_status, updated_at)
+                            VALUES (%s, %s, 'Upcoming', NOW())
+                        """
+                        student_event_params = [
+                            (student[0], event_id) for student in students
+                        ]
+                        cursor.executemany(student_event_insertion_sql, student_event_params)
+
                 return Response({
                     "success": True,
                     "message": "Event published successfully!",
@@ -159,11 +179,29 @@ class PublishEventView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class ListEventView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        auth_email = getattr(request, 'auth_email', None)
+        if not auth_email:
+            return Response({
+                "success": False,
+                "message": "Authentication email is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        user_role = self.get_user_role(auth_email)
+        if not user_role:
+            return Response({
+                "success": False,
+                "message": "User role not found. Please contact admin."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
         self.update_event_status()
+
 
         sort_param = request.query_params.get('sort', 'event_time')
         valid_sort_fields = [
@@ -178,69 +216,128 @@ class ListEventView(APIView):
                 "message": f"Invalid sort parameter. Must be one of {valid_sort_fields}."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
         order_param = sort_param.lstrip('-')
         order = 'DESC' if sort_param.startswith('-') else 'ASC'
 
-        select_sql = f"""
-            SELECT 
-                event_id, 
-                event_name, 
-                event_description, 
-                event_location, 
-                event_time, 
-                event_status, 
-                event_category, 
-                event_published_by, 
-                event_created_at 
-            FROM dbapp_event 
-            ORDER BY {order_param} {order}
-        """
 
-        with connection.cursor() as cursor:
-            cursor.execute(select_sql)
-            rows = cursor.fetchall()
+        if user_role == 'Admin':
+            select_sql = f"""
+                SELECT 
+                    e.event_id, 
+                    e.event_name, 
+                    e.event_description, 
+                    e.event_location, 
+                    e.event_time, 
+                    e.event_category, 
+                    e.event_published_by, 
+                    e.event_created_at,
+                    e.event_status
+                FROM dbapp_event AS e
+                ORDER BY {order_param} {order}
+            """
+            query_params = [] 
+        else:
+            select_sql = f"""
+                SELECT 
+                    e.event_id, 
+                    e.event_name, 
+                    e.event_description, 
+                    e.event_location, 
+                    e.event_time, 
+                    e.event_category, 
+                    e.event_published_by, 
+                    e.event_created_at,
+                    se.event_status
+                FROM dbapp_studentevent AS se
+                INNER JOIN dbapp_event AS e ON se.event_id = e.event_id
+                WHERE se.student_id = %s
+                ORDER BY {order_param} {order}
+            """
+            query_params = [auth_email]
 
-        columns = [col[0] for col in cursor.description]
-        events = [dict(zip(columns, row)) for row in rows]
 
-        return Response({
-            "success": True,
-            "events": EventSerializer(events, many=True).data
-        }, status=status.HTTP_200_OK)
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(select_sql, query_params)
+                rows = cursor.fetchall()
+
+            columns = [col[0] for col in cursor.description]
+            events = [dict(zip(columns, row)) for row in rows]
+
+            return Response({
+                "success": True,
+                "events": events
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": "An error occurred while fetching events.",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update_event_status(self):
         current_time = now()
+        print(f"Updating statuses at {current_time}")
 
-        update_sql = """
+        update_student_sql = """
+            UPDATE dbapp_studentevent AS se
+            INNER JOIN dbapp_event AS e ON se.event_id = e.event_id
+            SET se.event_status = 'Overdue', e.event_status = 'Overdue'
+            WHERE se.event_status NOT IN ('Overdue', 'Attended')
+            AND e.event_time <= %s
+        """
+
+        update_event_sql = """
             UPDATE dbapp_event
             SET event_status = 'Overdue'
-            WHERE event_status != 'Overdue' 
-            AND event_status != 'Attended'
+            WHERE event_status NOT IN ('Overdue', 'Attended')
             AND event_time <= %s
         """
+
         try:
             with connection.cursor() as cursor:
-                cursor.execute(update_sql, [current_time])
+                cursor.execute(update_student_sql, [current_time])
+                print(f"{cursor.rowcount} student events updated to 'Overdue'")
+
+                cursor.execute(update_event_sql, [current_time])
+                print(f"{cursor.rowcount} standalone events updated to 'Overdue'")
         except Exception as e:
             print(f"Error updating event statuses: {str(e)}")
+
+
+
+
+    def get_user_role(self, email):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT role FROM dbapp_user WHERE email = %s", [email]
+                )
+                row = cursor.fetchone()
+                return row[0] if row else None
+        except Exception as e:
+            print(f"Error fetching user role: {str(e)}")
+            return None
 
 
 class FilterEventByCategoryView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        event_categories = request.query_params.getlist('category', None) 
+        auth_email = getattr(request, 'auth_email', None)
+        if not auth_email:
+            return Response({
+                "success": False,
+                "message": "Authentication email is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        event_categories = request.query_params.getlist('category', None)
         event_status = request.query_params.get('status', None)
         start_time = request.query_params.get('start_time', None)
         end_time = request.query_params.get('end_time', None)
 
-
-
-        print(start_time)
-
         if event_status:
-            event_status = event_status.capitalize().strip() 
+            event_status = event_status.capitalize().strip()
 
         valid_statuses = ['Upcoming', 'Attended', 'Overdue']
 
@@ -253,13 +350,16 @@ class FilterEventByCategoryView(APIView):
         filters = []
         params = []
 
+        filters.append("se.student_id = %s")
+        params.append(auth_email)
+
         if event_categories:
-            filters.append(f"event_category IN ({','.join(['%s'] * len(event_categories))})")
+            filters.append(f"e.event_category IN ({','.join(['%s'] * len(event_categories))})")
             params.extend(event_categories)
 
- 
+
         if event_status:
-            filters.append("event_status = %s")
+            filters.append("se.event_status = %s")
             params.append(event_status)
 
         try:
@@ -267,18 +367,16 @@ class FilterEventByCategoryView(APIView):
                 start_time = parse_datetime(start_time)
                 if not start_time:
                     raise ValueError("Invalid start_time format.")
-                start_time = start_time.astimezone(pytz.UTC) 
-                start_time = start_time.strftime('%Y-%m-%d %H:%M:%S.%f')  
-                filters.append("event_time >= %s")
+                start_time = start_time.astimezone(pytz.UTC)
+                filters.append("e.event_time >= %s")
                 params.append(start_time)
 
             if end_time:
-                end_time = parse_datetime(end_time)  
+                end_time = parse_datetime(end_time)
                 if not end_time:
                     raise ValueError("Invalid end_time format.")
                 end_time = end_time.astimezone(pytz.UTC)
-                end_time = end_time.strftime('%Y-%m-%d %H:%M:%S.%f')  
-                filters.append("event_time <= %s")
+                filters.append("e.event_time <= %s")
                 params.append(end_time)
 
             if start_time and end_time and start_time > end_time:
@@ -294,34 +392,23 @@ class FilterEventByCategoryView(APIView):
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-        if not filters:
-            return Response({
-                "success": False,
-                "message": "At least one filtering parameter ('category' or 'status') is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-
         filter_query = " AND ".join(filters)
 
         query = f"""
             SELECT 
-                event_id, 
-                event_name, 
-                event_description, 
-                event_location, 
-                event_time, 
-                event_status, 
-                event_category, 
-                event_published_by, 
-                event_created_at 
-            FROM dbapp_event 
+                e.event_id, 
+                e.event_name, 
+                e.event_description, 
+                e.event_location, 
+                e.event_time, 
+                e.event_category, 
+                e.event_published_by, 
+                e.event_created_at,
+                se.event_status
+            FROM dbapp_studentevent AS se
+            INNER JOIN dbapp_event AS e ON se.event_id = e.event_id
             WHERE {filter_query}
         """
-
-        print("sql: ", query)
-        print("params: ", params)
 
         try:
             with connection.cursor() as cursor:
@@ -349,51 +436,62 @@ class UpdateEventStatusView(APIView):
     permission_classes = [AllowAny]
 
     def patch(self, request, event_id):
+        current_time = now()
+        print(f"Current Time (UTC): {current_time}")
+
+        auth_email = getattr(request, 'auth_email', None)
+        if not auth_email:
+            return Response({
+                "success": False,
+                "message": "Authentication email is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         new_status = request.data.get('status', None)
+        VALID_STATUSES = ['Upcoming', 'Attended', 'Overdue', 'Unattended']
 
-        valid_statuses = ['Upcoming', 'Attended', 'Overdue', 'Unattended']
+        if not new_status:
+            return Response({
+                "success": False,
+                "message": "Status is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        if new_status:
-            new_status = new_status.capitalize().strip() 
+        new_status = new_status.capitalize().strip()
+        print(f"Received status: {new_status}")
 
         if new_status == 'Unattended':
             new_status = 'Upcoming'
 
-        print(f"Received event_status: {new_status}")
-
-
-        if new_status not in valid_statuses:
+        if new_status not in VALID_STATUSES:
             return Response({
                 "success": False,
-                "message": f"Invalid status. Must be one of {valid_statuses}."
+                "message": f"Invalid status. Must be one of {VALID_STATUSES}."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         update_sql = """
-            UPDATE dbapp_event
-            SET event_status = %s
-            WHERE event_id = %s
+            UPDATE dbapp_studentevent
+            SET event_status = %s, updated_at = %s
+            WHERE student_id = %s AND event_id = %s
         """
 
         try:
             with connection.cursor() as cursor:
-                cursor.execute(update_sql, [new_status, event_id])
-
+                cursor.execute(update_sql, [new_status, current_time, auth_email, event_id])
                 if cursor.rowcount == 0:
                     return Response({
                         "success": False,
-                        "message": f"No event found with id {event_id}."
+                        "message": f"No event found for the current user with event_id {event_id}."
                     }, status=status.HTTP_404_NOT_FOUND)
 
             return Response({
                 "success": True,
-                "message": f"Event status updated to '{new_status}'."
+                "message": f"Your event status has been updated to '{new_status}'."
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            print(f"Error occurred: {str(e)}")
             return Response({
                 "success": False,
-                "message": "An error occurred while updating the event status.",
-                "error": str(e)
+                "message": "An unexpected error occurred. Please try again later."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -665,6 +763,9 @@ class GenerateSQLView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             user_input = request.data.get("user_input")
+            auth_email = getattr(request, 'auth_email', None)
+            print(request.data)
+            print(auth_email)
             if not user_input:
                 return Response({"error": "'user_input' is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -676,7 +777,7 @@ class GenerateSQLView(APIView):
 
             The user has provided the following requirement: "{user_input}".
 
-            Generate a valid SQL query based on the user's requirement. Return only the SQL query, no explanations.
+            Generate a valid SQL query based on the user's requirement and provided schema. Use plain text formatting without any escaped characters like \\". I want a sql query which I just need to copy it, then I can run it. If an email is needed, please refer to the current email: "{auth_email}". Return only the SQL query as a single line, no explanations.
             """
             response = openai.ChatCompletion.create(
                 model="gpt-4",
@@ -727,6 +828,7 @@ class ExecuteSQLView(APIView):
 
     def execute_sql(self, sql_query):
         try:
+            print(sql_query)
             cursor = connection.cursor()
 
             cursor.execute(sql_query)
@@ -742,4 +844,5 @@ class ExecuteSQLView(APIView):
             return result
 
         except Exception as e:
+            print(e)
             raise Exception(f"Error executing SQL query: {e}")

@@ -199,8 +199,9 @@ class ListEventView(APIView):
                 "message": "User role not found. Please contact admin."
             }, status=status.HTTP_404_NOT_FOUND)
 
-
+        self.add_default_events_for_new_student(request)
         self.update_event_status()
+        
 
 
         sort_param = request.query_params.get('sort', 'event_time')
@@ -304,7 +305,24 @@ class ListEventView(APIView):
         except Exception as e:
             print(f"Error updating event statuses: {str(e)}")
 
-
+    def add_default_events_for_new_student(self, request):
+        auth_email = getattr(request, 'auth_email', None)
+        try:
+            insert_sql = """
+                INSERT INTO dbapp_studentevent (student_id, event_id, event_status)
+                SELECT %s, event_id, event_status
+                FROM dbapp_event
+                WHERE event_id NOT IN (
+                    SELECT event_id
+                    FROM dbapp_studentevent
+                    WHERE student_id = %s
+                )
+            """
+            with connection.cursor() as cursor:
+                cursor.execute(insert_sql, [auth_email, auth_email])
+                print(f"New events added for student {auth_email}")
+        except Exception as e:
+            print(f"Error adding new events for user {auth_email}: {str(e)}")
 
 
     def get_user_role(self, email):

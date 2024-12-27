@@ -106,7 +106,7 @@ if os.getenv('GAE_APPLICATION', None):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'HOST': '/cloudsql/db-group4-438622:us-west1:db-group4',
+            'HOST': 'host address',
             'USER': 'root',
             'PASSWORD': ' ',
             'NAME': 'final_project',
@@ -119,23 +119,10 @@ else:
             'NAME': 'final_project',
             'USER': 'root',
             'PASSWORD': ' ',
-            'HOST': '35.199.166.101',
+            'HOST': 'host address',
             'PORT': '3306'
         }
     }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'final',
-#         'USER': 'root',
-#         'PASSWORD': '',
-#         'HOST': '127.0.0.1',
-#         'PORT': '3306'
-#     }
-# }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

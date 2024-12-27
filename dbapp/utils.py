@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from google.cloud import vision
 
 
-openai.api_key = "sk-F26KW4HCJiSlbCfhR1XnyyKf11QnvbUN7lD0ZBYSgbT3BlbkFJs9TZ5gsij14tIJNLk_G__1-aEnKWzF4qA7V81-zGoA"
+openai.api_key = "openAI key"
 def process_file_content(file, content_type):
     if file.name.endswith('.txt'):
         return file.read().decode('utf-8')
